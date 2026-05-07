@@ -93,6 +93,13 @@ export function DiagnosisScreen() {
       <div className="container-app flex-1 flex flex-col py-8 gap-4">
         {/* Progress */}
         <div className="space-y-2">
+          <div className="h-[3px] bg-bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-ink rounded-full"
+              animate={{ width: `${progress * 100}%` }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
           <div className="flex justify-between text-xs text-ink-mute">
             <span>
               {t('diagnosis.progress', {
@@ -102,20 +109,13 @@ export function DiagnosisScreen() {
             </span>
             <span>{Math.round(progress * 100)}%</span>
           </div>
-          <div className="h-1 bg-bg-muted rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-ink-soft rounded-full"
-              animate={{ width: `${progress * 100}%` }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-            />
-          </div>
 
           {/* Back button */}
           <button
             type="button"
             onClick={goBack}
             disabled={currentIndex === 0}
-            className="flex items-center gap-1 text-xs text-ink-soft disabled:text-ink-mute/40 hover:opacity-70 transition-opacity disabled:cursor-not-allowed mt-1"
+            className="flex items-center gap-1 text-sm text-ink-soft disabled:text-ink-mute/60 hover:opacity-70 transition-opacity disabled:cursor-not-allowed mt-1"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
             <span>{t('diagnosis.back')}</span>
@@ -140,12 +140,15 @@ export function DiagnosisScreen() {
 
         {/* Question card */}
         <div className="flex-1 flex items-center py-2">
-          <QuestionCard
-            key={currentIndex}
-            question={currentQuestion}
-            onAnswer={handleAnswer}
-            isFirstQuestion={currentIndex === 0}
-          />
+          <AnimatePresence mode="wait">
+            <QuestionCard
+              key={currentQuestion.id}
+              question={currentQuestion}
+              onAnswer={handleAnswer}
+              isFirstQuestion={currentIndex === 0}
+              index={currentIndex + 1}
+            />
+          </AnimatePresence>
         </div>
       </div>
     </main>
