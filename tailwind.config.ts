@@ -82,6 +82,10 @@ export default {
         'lg': '1rem',
         'xl': '1.5rem',
         '2xl': '2rem',
+        '3xl': '1.5rem',
+      },
+      boxShadow: {
+        soft: '0 1px 2px rgba(42,39,36,0.04), 0 4px 16px rgba(42,39,36,0.04)',
       },
       keyframes: {
         'fade-in': {
@@ -92,10 +96,16 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'wiggle-once': {
+          '0%,100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-2px)' },
+          '75%': { transform: 'translateX(2px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
         'slide-up': 'slide-up 0.4s ease-out',
+        'wiggle-once': 'wiggle-once 0.6s ease-in-out 1',
       },
     },
   },

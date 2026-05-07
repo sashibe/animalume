@@ -46,3 +46,23 @@
     @apply mx-auto w-full max-w-md px-4;
   }
 }
+
+@layer utilities {
+  .bg-watercolor {
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(217,165,160,0.18), transparent 55%),
+      radial-gradient(circle at 82% 78%, rgba(168,181,160,0.14), transparent 60%);
+  }
+  .bg-watercolor-mist {
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(166,180,194,0.16), transparent 55%),
+      radial-gradient(circle at 80% 70%, rgba(201,167,106,0.12), transparent 60%);
+  }
+}
+
+@layer base {
+  ::selection {
+    background: rgba(217, 165, 160, 0.25);
+    color: inherit;
+  }
+}
