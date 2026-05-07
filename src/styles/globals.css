@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg text-ink antialiased;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-feature-settings: 'palt';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* セーフエリア対応（iOS notch等） */
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* 見出し */
+  h1, h2, h3 {
+    font-family: 'Noto Serif JP', 'Pretendard', serif;
+    font-weight: 500;
+  }
+
+  /* スクロール体験 */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* フォーカスリング */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent-rose ring-offset-2 ring-offset-bg;
+  }
+}
+
+@layer components {
+  .container-app {
+    @apply mx-auto w-full max-w-md px-4;
+  }
+}

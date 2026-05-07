@@ -1,0 +1,92 @@
+{
+  "app": {
+    "name": "Animalume",
+    "tagline": "あなたの内なる光に出会う",
+    "description": "スワイプで答える性格診断。変化を可視化するMBTI。"
+  },
+  "nav": {
+    "home": "ホーム",
+    "diagnosis": "診断",
+    "history": "履歴",
+    "settings": "設定"
+  },
+  "home": {
+    "cta_start": "診断をはじめる",
+    "cta_resume": "途中から再開する",
+    "intro": "40問のスワイプで、あなたの性格タイプを見つけます。",
+    "philosophy_title": "なぜ無料なのか",
+    "philosophy_body": "Animalumeは、最高品質の診断体験を、すべての人に無料で提供します。"
+  },
+  "diagnosis": {
+    "progress": "{{current}} / {{total}}",
+    "swipe_hint": "タップ、または左右にスワイプして選択",
+    "back": "ひとつ戻る",
+    "milestone_10": "最初の10問、ありがとうございます",
+    "milestone_20": "ちょうど折り返しです",
+    "milestone_30": "ラスト10問"
+  },
+  "result": {
+    "your_type": "あなたのタイプ",
+    "share": "シェアする",
+    "save": "保存する",
+    "view_history": "履歴を見る",
+    "retake": "もう一度受ける",
+    "message_very_high": "あなたは典型的な{{typeName}}です。{{tagline}}という言葉が、まさに今のあなたを表しています。",
+    "message_high": "あなたは{{typeName}}の傾向がしっかりと出ています。{{tagline}}という側面が、あなたの中に見えます。",
+    "message_moderate": "いま、あなたは{{typeName}}の傾向が見えますが、ほかのタイプの要素もあわせ持っています。時期や環境によって、違う面が現れることもあるでしょう。",
+    "message_low": "いま、あなたは{{typeName}}の傾向が見えますが、まだいくつかの要素の間で揺らいでいます。3ヶ月後にもう一度受けると、違う光が見えるかもしれません。",
+    "borderline_EI": "特に、外に向かうか内に向かうかという軸では、ほぼ中間に位置しています。状況によって両方の側面が現れる、しなやかさを持っています。",
+    "borderline_SN": "特に、目の前の事実を見るか、その先の可能性を見るかという軸では、ほぼ中間に位置しています。両方の視点を行き来できる柔軟さがあります。",
+    "borderline_TF": "特に、論理で決めるか、心で決めるかという軸では、ほぼ中間に位置しています。理性と感情の両方を大切にできる豊かさがあります。",
+    "borderline_JP": "特に、計画を立てて進むか、流れに任せて進むかという軸では、ほぼ中間に位置しています。状況によって両方の側面が現れる、しなやかさを持っています。",
+    "details": {
+      "axes_title": "各軸の傾向",
+      "strengths_title": "あなたの強み",
+      "relationship_title": "関係性での傾向",
+      "axis_EI_label": "外向か、内向か",
+      "axis_SN_label": "感覚か、直観か",
+      "axis_TF_label": "思考か、感情か",
+      "axis_JP_label": "判断か、知覚か",
+      "axis_EI_strong_E": "強く E（外向）寄り",
+      "axis_EI_moderate_E": "明確に E（外向）寄り",
+      "axis_EI_mild_E": "やや E（外向）寄り",
+      "axis_EI_borderline": "ほぼ中間",
+      "axis_EI_strong_I": "強く I（内向）寄り",
+      "axis_EI_moderate_I": "明確に I（内向）寄り",
+      "axis_EI_mild_I": "やや I（内向）寄り",
+      "axis_SN_strong_N": "強く N（直観）寄り",
+      "axis_SN_moderate_N": "明確に N（直観）寄り",
+      "axis_SN_mild_N": "やや N（直観）寄り",
+      "axis_SN_borderline": "ほぼ中間",
+      "axis_SN_strong_S": "強く S（感覚）寄り",
+      "axis_SN_moderate_S": "明確に S（感覚）寄り",
+      "axis_SN_mild_S": "やや S（感覚）寄り",
+      "axis_TF_strong_F": "強く F（感情）寄り",
+      "axis_TF_moderate_F": "明確に F（感情）寄り",
+      "axis_TF_mild_F": "やや F（感情）寄り",
+      "axis_TF_borderline": "ほぼ中間",
+      "axis_TF_strong_T": "強く T（思考）寄り",
+      "axis_TF_moderate_T": "明確に T（思考）寄り",
+      "axis_TF_mild_T": "やや T（思考）寄り",
+      "axis_JP_strong_P": "強く P（知覚）寄り",
+      "axis_JP_moderate_P": "明確に P（知覚）寄り",
+      "axis_JP_mild_P": "やや P（知覚）寄り",
+      "axis_JP_borderline": "ほぼ中間",
+      "axis_JP_strong_J": "強く J（判断）寄り",
+      "axis_JP_moderate_J": "明確に J（判断）寄り",
+      "axis_JP_mild_J": "やや J（判断）寄り"
+    }
+  },
+  "common": {
+    "loading": "読み込み中…",
+    "error": "エラーが発生しました",
+    "retry": "もう一度",
+    "close": "閉じる",
+    "next": "次へ",
+    "back": "戻る",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "agree": "同意する",
+    "language": "言語"
+  }
+}
