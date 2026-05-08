@@ -1,6 +1,6 @@
 import type { MbtiType } from '@/features/diagnosis/logic/types';
 
-const SITE_URL = 'https://animalume.web.app';
+const SITE_URL = 'https://animalume.com';
 
 export function buildXShareUrl(
   type: MbtiType,

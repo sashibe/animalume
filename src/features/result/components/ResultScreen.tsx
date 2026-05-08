@@ -1,14 +1,17 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Compass, Sparkles, Users } from 'lucide-react';
 import { CharacterFrame } from './CharacterFrame';
+import { ShareModal } from '@/features/share/components/ShareModal';
 import { getTypeMeta } from '@/data/types';
 import { getConfidenceLevel, findBorderlineAxes } from '@/features/diagnosis/logic';
 import { AXES } from '@/features/diagnosis/logic/types';
 import type { DiagnosisResult, Axis } from '@/features/diagnosis/logic/types';
 import type { QuestionLocale } from '@/data/questions/types';
+import { GROUP_OF, GROUP_ACCENT } from '@/lib/group';
 import { cn } from '@/lib/cn';
 
 const AXIS_SIDE_LABELS: Record<Axis, [string, string]> = {
@@ -29,28 +32,39 @@ function getAxisStrengthKey(axis: Axis, score: number, strength: number): string
 
 function SectionEyebrow({ num, label }: { num: number; label: string }) {
   return (
-    <div className="flex items-baseline gap-3 mb-5">
-      <span className="font-serif text-sm text-ink-mute tabular-nums">
+    <div className="text-center mb-8">
+      <div className="text-xs tracking-widest text-ink-mute mb-2">
         — {String(num).padStart(2, '0')} —
-      </span>
-      <span className="text-[11px] tracking-[0.3em] uppercase text-ink-mute">{label}</span>
+      </div>
+      <div className="text-2xl font-serif tracking-wider text-ink">{label}</div>
     </div>
   );
 }
 
-function AccordionItem({ title, children }: { title: string; children: React.ReactNode }) {
+function AccordionItem({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-5 text-left text-base font-medium text-ink hover:no-underline hover:opacity-80 transition-opacity"
+        className="flex w-full items-center justify-between py-5 text-left hover:opacity-80 transition-opacity"
       >
-        {title}
+        <span className="flex items-center gap-2.5 text-base font-medium text-ink">
+          {icon && <span className="text-ink-mute">{icon}</span>}
+          {title}
+        </span>
         <ChevronDown
           className={cn(
-            'w-4 h-4 text-ink-mute transition-transform duration-300',
+            'w-4 h-4 text-ink-mute transition-transform duration-300 shrink-0 ml-2',
             isOpen && 'rotate-180',
           )}
           strokeWidth={1.5}
@@ -80,6 +94,7 @@ export function ResultScreen() {
   const { state } = useLocation();
   const result = state?.result as DiagnosisResult | undefined;
   const locale = (i18n.language.startsWith('ko') ? 'ko' : 'ja') as QuestionLocale;
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   if (!result) {
     return (
@@ -100,8 +115,30 @@ export function ResultScreen() {
   const level = getConfidenceLevel(result.confidence);
   const borderlineAxes = findBorderlineAxes(result.scores);
   const primaryBorderlineAxis = borderlineAxes[0] ?? null;
+  const group = GROUP_OF[result.type];
+  const quoteBorderClass = GROUP_ACCENT[group].borderMid;
+
+  const BASE_URL = 'https://animalume.com';
+  const shareCardUrl = `${BASE_URL}/share-cards/${meta.folderName}-${locale}.png`;
+  const ogTitle = `${result.type} ${meta.nameJa} | Animalume`;
+  const ogDescription = meta.tagline;
 
   return (
+    <>
+    <Helmet>
+      <title>{ogTitle}</title>
+      <meta property="og:title" content={ogTitle} />
+      <meta property="og:description" content={ogDescription} />
+      <meta property="og:image" content={shareCardUrl} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:url" content={`${BASE_URL}/result/${resultId ?? 'local'}`} />
+      <meta property="og:type" content="article" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={ogTitle} />
+      <meta name="twitter:description" content={ogDescription} />
+      <meta name="twitter:image" content={shareCardUrl} />
+    </Helmet>
     <main className="min-h-full safe-top safe-bottom flex flex-col">
       <div className="container-app flex-1 flex flex-col py-8 animate-slide-up">
 
@@ -124,22 +161,31 @@ export function ResultScreen() {
           <p className="text-sm text-ink-mute">{meta.groupJa}</p>
         </header>
 
+        {/* ── Portrait label ── */}
+        <div className="flex justify-center mb-2">
+          <div className="flex items-center gap-3 text-ink-mute/60">
+            <div className="h-px w-12 bg-current" />
+            <div className="text-[10px] tracking-[0.3em] uppercase">Portrait</div>
+            <div className="h-px w-12 bg-current" />
+          </div>
+        </div>
+
         {/* ── Character ── */}
         <CharacterFrame type={result.type} confidence={result.confidence} locale={locale} />
 
         {/* ── Tagline block ── */}
         <section className="text-center px-2 my-10 space-y-5">
-          <p className="font-serif text-xl leading-snug text-ink text-balance">{meta.tagline}</p>
+          <p className="font-serif text-xl leading-snug text-ink text-balance whitespace-pre-line">{meta.tagline}</p>
           <div aria-hidden className="flex items-center justify-center gap-1.5">
             <span className="block h-px w-12 bg-border-strong" />
             <span className="block h-1 w-1 rounded-full bg-accent-gold/70" />
             <span className="block h-px w-12 bg-border-strong" />
           </div>
-          <p className="text-base leading-relaxed text-ink-soft text-balance">{meta.essence}</p>
+          <p className="text-base leading-relaxed text-ink-soft text-balance whitespace-pre-line">{meta.essence}</p>
         </section>
 
         {/* ── Page break ── */}
-        <div aria-hidden className="my-12 flex items-center gap-3 text-ink-mute">
+        <div aria-hidden className="my-12 flex items-center gap-3">
           <span className="h-px flex-1 bg-border" />
           <span className="h-px flex-1 bg-border" />
         </div>
@@ -147,14 +193,16 @@ export function ResultScreen() {
         {/* ── 01 — Reading ── */}
         <section className="mb-12">
           <SectionEyebrow num={1} label={t('result.section_reading', 'Reading')} />
-          <p className="font-serif text-xl leading-snug text-ink mb-3 text-balance">
-            {t(`result.message_${level}_lead`, { typeName: meta.nameJa })}
-          </p>
-          <p className="text-base leading-[1.85] text-ink-soft text-balance">
-            {t(`result.message_${level}_body`, { typeName: meta.nameJa, tagline: meta.tagline })}
-          </p>
+          <div className={cn('border-l-2 pl-6 my-4', quoteBorderClass)}>
+            <p className="font-serif text-xl text-ink leading-relaxed text-balance whitespace-pre-line">
+              {t(`result.message_${level}_lead`, { typeName: meta.nameJa })}
+            </p>
+            <p className="text-base text-ink-soft mt-4 leading-[1.85] text-balance whitespace-pre-line">
+              {t(`result.message_${level}_body`, { typeName: meta.nameJa, tagline: meta.tagline })}
+            </p>
+          </div>
           {primaryBorderlineAxis && (
-            <p className="mt-6 text-base leading-[1.85] text-ink-soft text-balance border-l-2 border-border-strong pl-4">
+            <p className="mt-6 text-base leading-[1.85] text-ink-soft text-balance border-l-2 border-border-strong pl-4 whitespace-pre-line">
               {t(`result.borderline_${primaryBorderlineAxis}`)}
             </p>
           )}
@@ -164,7 +212,10 @@ export function ResultScreen() {
         <section className="mb-12">
           <SectionEyebrow num={2} label={t('result.section_more', 'More')} />
           <div className="border-y border-border divide-y divide-border">
-            <AccordionItem title={t('result.details.axes_title')}>
+            <AccordionItem
+              title={t('result.details.axes_title')}
+              icon={<Compass className="w-4 h-4" strokeWidth={1.5} />}
+            >
               <div className="space-y-3 px-1">
                 {AXES.map((axis) => {
                   const score = result.scores[axis];
@@ -184,19 +235,25 @@ export function ResultScreen() {
               </div>
             </AccordionItem>
 
-            <AccordionItem title={t('result.details.strengths_title')}>
+            <AccordionItem
+              title={t('result.details.strengths_title')}
+              icon={<Sparkles className="w-4 h-4" strokeWidth={1.5} />}
+            >
               <ul className="space-y-4 px-1">
                 {meta.strengths.map((item, i) => (
                   <li key={i} className="flex gap-3 text-ink-soft leading-relaxed">
                     <span className="text-ink-mute shrink-0" aria-hidden>—</span>
-                    <span>{item}</span>
+                    <span className="whitespace-pre-line">{item}</span>
                   </li>
                 ))}
               </ul>
             </AccordionItem>
 
-            <AccordionItem title={t('result.details.relationship_title')}>
-              <p className="text-base text-ink-soft leading-[1.85] text-balance px-1">
+            <AccordionItem
+              title={t('result.details.relationship_title')}
+              icon={<Users className="w-4 h-4" strokeWidth={1.5} />}
+            >
+              <p className="text-base text-ink-soft leading-[1.85] text-balance px-1 whitespace-pre-line">
                 {meta.relationshipNote}
               </p>
             </AccordionItem>
@@ -207,8 +264,8 @@ export function ResultScreen() {
         <div className="flex flex-col gap-3 mt-auto pt-2">
           <button
             type="button"
-            onClick={() => alert('シェア機能はPhase 2で実装します')}
-            className="w-full py-3.5 rounded-full border border-border text-ink text-sm font-medium hover:bg-bg-subtle transition"
+            onClick={() => setIsShareOpen(true)}
+            className="w-full py-3.5 rounded-full bg-ink text-bg text-sm font-medium hover:opacity-90 transition"
           >
             {t('result.share')}
           </button>
@@ -221,15 +278,30 @@ export function ResultScreen() {
           </button>
         </div>
 
-        {/* ── Footnote ── */}
-        <p className="mt-12 text-center text-xs text-ink-mute italic leading-relaxed">
-          {t('result.footnote', '―― タイプは時間と共に変化することもあります')}
-        </p>
+        {/* ── Footer ── */}
+        <div className="text-center py-8 mt-8 border-t border-border">
+          <div className="text-[10px] tracking-[0.3em] uppercase text-ink-mute mb-2">
+            — Animalume —
+          </div>
+          <p className="text-xs text-ink-mute italic leading-relaxed whitespace-pre-line">
+            {t('result.footnote', '―― タイプは時間と共に変化することもあります')}
+          </p>
+        </div>
 
         {resultId && resultId !== 'local' && (
-          <p className="mt-4 text-center text-xs text-ink-mute">ID: {resultId.slice(0, 8)}…</p>
+          <p className="text-center text-xs text-ink-mute pb-4">ID: {resultId.slice(0, 8)}…</p>
         )}
       </div>
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        type={result.type}
+        name={meta.nameJa}
+        tagline={meta.tagline}
+        locale={locale}
+      />
     </main>
+    </>
   );
 }
