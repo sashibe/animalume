@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Share2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShare } from '../hooks/useShare';
-import { buildXShareUrl, buildLineShareUrl, buildKakaoShareUrl } from '../lib/shareUrls';
+import { buildXShareUrl, buildLineShareUrl } from '../lib/shareUrls';
 import type { MbtiType } from '@/features/diagnosis/logic/types';
 
 interface Props {
@@ -11,13 +11,6 @@ interface Props {
   tagline: string;
   locale: 'ja' | 'ko';
 }
-
-// Kakao ブランドカラー #FEE500 の吹き出し型 SVG（公式ガイドライン準拠）
-const KAKAO_ICON = (
-  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" style={{ color: '#FEE500' }} aria-hidden>
-    <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.79 1.86 5.24 4.66 6.6l-1.18 4.32c-.1.36.3.65.62.45L11.4 18.5c.2.01.4.02.6.02 5.52 0 10-3.48 10-7.72S17.52 3 12 3z" />
-  </svg>
-);
 
 const LINE_ICON = (
   <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" style={{ color: '#06C755' }} aria-hidden>
@@ -69,7 +62,6 @@ export function ShareButtonGroup({ type, name, tagline, locale }: Props) {
 
   return (
     <div className="space-y-2.5">
-      {/* Native share: image + text to any app (shown on supporting devices) */}
       {canNativeShare() && (
         <button
           type="button"
@@ -81,7 +73,6 @@ export function ShareButtonGroup({ type, name, tagline, locale }: Props) {
         </button>
       )}
 
-      {/* X / Twitter */}
       <a
         href={buildXShareUrl(type, name, tagline, locale)}
         target="_blank"
@@ -94,18 +85,6 @@ export function ShareButtonGroup({ type, name, tagline, locale }: Props) {
         {t('share.x_share')}
       </a>
 
-      {/* Kakao — URL share（X / LINE と同パターン、SDK 不使用）配置順: X → Kakao → LINE */}
-      <a
-        href={buildKakaoShareUrl()}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${btnBase} border border-border text-ink hover:bg-bg-subtle`}
-      >
-        {KAKAO_ICON}
-        {t('share.kakao_share')}
-      </a>
-
-      {/* LINE — shares image file directly on mobile, URL fallback on desktop */}
       <button
         type="button"
         onClick={handleLine}
@@ -116,7 +95,6 @@ export function ShareButtonGroup({ type, name, tagline, locale }: Props) {
         {isLineSharing ? t('common.loading') : t('share.line_share')}
       </button>
 
-      {/* Save image to device */}
       <button
         type="button"
         onClick={handleSave}

@@ -19,11 +19,6 @@ export function buildLineShareUrl(): string {
   return `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(SITE_URL)}`;
 }
 
-// Kakao Story share URL scheme — SDK 不使用（Login SDK は Phase 5 で別途導入予定）
-export function buildKakaoShareUrl(): string {
-  return `https://story.kakao.com/share?url=${encodeURIComponent(`${SITE_URL}/`)}`;
-}
-
 export function buildShareText(
   type: MbtiType,
   name: string,
@@ -34,3 +29,9 @@ export function buildShareText(
     ? `私のタイプは「${type}・${name}」でした\n\n${tagline}\n\n#Animalume #アニマリュム`
     : `나의 타입은「${type}・${name}」였습니다\n\n${tagline}\n\n#Animalume #애니말룸`;
 }
+
+// NOTE: Kakao share is intentionally not implemented in Phase 2.
+// The legacy URL scheme (story.kakao.com/share) was deprecated by Kakao.
+// Proper implementation requires Kakao JavaScript SDK with appkey registration,
+// which will be done together with Kakao Login in Phase 5.
+// See ADR-0008 for the decision context.
