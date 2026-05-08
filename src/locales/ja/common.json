@@ -89,6 +89,15 @@
       "axis_JP_mild_J": "やや J（判断）寄り"
     }
   },
+  "share": {
+    "title": "シェア",
+    "where_to_share": "どこに送りますか？",
+    "native_share": "シェア",
+    "x_share": "X でシェア",
+    "line_share": "LINE でシェア",
+    "kakao_share": "Kakao でシェア",
+    "save_image": "画像を保存"
+  },
   "common": {
     "loading": "読み込み中…",
     "error": "エラーが発生しました",

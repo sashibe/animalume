@@ -89,6 +89,15 @@
       "axis_JP_mild_J": "약간 J（판단）쪽"
     }
   },
+  "share": {
+    "title": "공유",
+    "where_to_share": "어디에 공유할까요?",
+    "native_share": "공유하기",
+    "x_share": "X에 공유",
+    "line_share": "LINE에 공유",
+    "kakao_share": "카카오로 공유",
+    "save_image": "이미지 저장"
+  },
   "common": {
     "loading": "불러오는 중…",
     "error": "오류가 발생했습니다",
