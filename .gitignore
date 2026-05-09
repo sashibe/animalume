@@ -9,6 +9,8 @@ dist-ssr
 *.tsbuildinfo
 vite.config.d.ts
 vite.config.js
+vite-plugins/*.js
+vite-plugins/*.d.ts
 
 # Editor
 .vscode/*
@@ -42,6 +44,7 @@ lerna-debug.log*
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+service-account.json
 
 # Coverage
 coverage
@@ -50,6 +53,9 @@ coverage
 # Setup artifacts
 *.zip
 phase1-pack/
+
+# Local reference images / screenshots
+references/
 
 # OS
 Thumbs.db

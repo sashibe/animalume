@@ -97,9 +97,9 @@
 **段階的データ収集フロー**
 ```
 診断直後：   結果のみ表示、属性質問なし
-2回目訪問：  年代・職業を任意入力（精度向上の名目）
+2回目訪問：  年代・職業を任意入力(精度向上の名目)
 3回目訪問：  興味関心アンケート
-1ヶ月後：    ライフイベント取得（変化分析の名目）
+1ヶ月後：    ライフイベント取得(変化分析の名目)
 ```
 
 ### 3.4 Data Products（将来の販売形態）
@@ -224,7 +224,18 @@ animalume/
 │   │   ├── history/                # 履歴・比較機能
 │   │   ├── compatibility/          # 相性診断
 │   │   ├── friends/                # LINE/Kakao 友達連携
-│   │   └── auth/                   # 認証・匿名→本登録
+│   │   ├── auth/                   # 認証・匿名→本登録
+│   │   └── admin/                  # 管理画面
+│   │       ├── shared/             # 基盤（型定義・バリデーション・IndexedDB下書き）
+│   │       ├── editor/             # 編集共通フレーム（自動保存・多言語タブ）
+│   │       ├── types/              # タイプ説明エディタ
+│   │       ├── questions/          # 問題エディタ
+│   │       ├── ui-strings/         # UI文言エディタ
+│   │       ├── publish/            # 公開フロー（差分プレビュー→Firestore）
+│   │       ├── lists/              # 一覧画面
+│   │       ├── layout/             # 管理画面レイアウト
+│   │       ├── auth/               # 認可ガード（role: 'admin'）
+│   │       └── routes.tsx
 │   │
 │   ├── data/
 │   │   ├── questions/
@@ -256,10 +267,23 @@ animalume/
 ├── functions/                       # Cloud Functions（必要時のみ）
 │
 └── docs/
-    ├── data-model.md
-    ├── question-design.md          # 問題設計の指針
-    ├── character-design.md         # キャラクター世界観
-    └── monetization.md             # 将来の収益化案メモ
+    ├── README.md                       # docs全体の目次
+    ├── decisions/                      # Architecture Decision Records（§15）
+    │   ├── README.md                   # ADR 一覧
+    │   ├── 0001-mbti-axis-scoring.md
+    │   ├── 0002-types-can-change-philosophy.md
+    │   ├── 0003-firebase-stack.md
+    │   ├── 0004-zero-individual-monetization.md
+    │   ├── 0005-character-pre-generation.md
+    │   ├── 0006-cocomi-asset-reuse.md
+    │   └── 0007-line-kakao-priority.md
+    ├── design/                         # デザイン関連
+    │   ├── design-tokens.md            # カラー・タイポ・スペーシング等
+    │   └── character-design.md         # キャラクター世界観
+    ├── data-model.md                   # Firestore データモデル詳細
+    ├── question-design.md              # 問題設計の指針
+    ├── monetization.md                 # 収益化案メモ
+    └── qa-scenarios.md                 # QAシナリオ管理（§14.8）
 ```
 
 ---
@@ -330,6 +354,17 @@ analytics_aggregates/{periodId}       # 集計データ（販売用）
   - typeDistribution: { INTJ: 1234, ... }
   - segmentBreakdowns: {...}          # 年代別・性別・地域別
   - generatedAt: Timestamp
+
+content_published/
+  types/items/{typeCode}              # TypeDescription（管理画面から公開）
+  questions/items/{questionId}        # Question
+  ui_strings/items/main               # UiStrings
+
+content_history/{contentType}/{contentId}/{autoId}
+  - before, after: 公開前後のデータスナップショット
+  - changeNote: string                # 変更メモ
+  - changedAt: Timestamp
+  - changedBy: string                 # 公開した管理者 UID
 ```
 
 ### 7.2 Security Rules 方針
@@ -339,6 +374,9 @@ analytics_aggregates/{periodId}       # 集計データ（販売用）
 - `relationships/{relId}` は両者が consent している場合のみ閲覧可
 - `questions/` は全員読み取り可、書き込みは管理者のみ
 - `analytics_aggregates/` は管理者のみ
+- `content_published/` は全員読み取り可、書き込みは `role: 'admin'` クレームを持つユーザーのみ
+- `content_history/` は管理者のみ読み書き
+- 管理者権限付与: `scripts/grant-admin.mjs <uid>` を実行（Firebase Admin SDK + service-account.json が必要）
 
 ---
 
@@ -411,6 +449,7 @@ analytics_aggregates/{periodId}       # 集計データ（販売用）
 | quiet | 0.40未満 | 控えめな表情、モノトーン寄り、余白多め |
 
 判定ロジックは `src/lib/character.ts` の `pickVariantFromConfidence()` で実装。
+方式選定の経緯は `docs/decisions/0005-character-pre-generation.md` を参照。
 
 ### 9.2 世界観
 
@@ -544,6 +583,8 @@ const IMPLEMENTED_TYPES: ReadonlySet<MbtiType> = new Set<MbtiType>([
 - 大きな実装は Phase 単位で分解、1セッション内で完結させる
 - データモデル変更時は必ず本CLAUDE.mdの該当箇所も更新する
 - 問題文・タイプ説明文の改変は、データ品質に直結するため慎重に
+- 詳細な開発ワークフローは §14、意思決定の記録ルールは §15 を参照
+- 新機能実装前に `docs/lessons-learned.md` を読み、過去の失敗パターンを回避すること
 
 ### 13.2 関連プロジェクト
 
@@ -559,7 +600,211 @@ const IMPLEMENTED_TYPES: ReadonlySet<MbtiType> = new Set<MbtiType>([
 - 16タイプの正式名称（仮名運用→ネイティブレビュー後確定）
 - BtoB販売の最初のターゲット顧客（Itochu系候補）
 
+未決→既決への遷移は §15.7 に従い ADR 化を経由する。
+
 ---
 
-**Last Updated**: 2026-05-07
-**Version**: 1.0.0（初版）
+## 14. Development Workflow
+
+### 14.1 GitHub Issues 運用ルール
+
+新機能・バグ修正・リファクタリングを問わず、**作業を開始する前に必ず Issue を作成する**。
+
+- Issue 本文には目的・背景・受入条件を記載
+- ブランチは Issue を作成してから切る
+- Issue 番号のない作業ブランチは作成しない
+- 作業開始時に「Issue #NN に着手」と Claude Code に伝えるだけで開発フローが回る状態を維持
+
+### 14.2 ブランチ戦略（GitHub Flow）
+
+- `main` ブランチは常にデプロイ可能な状態を保つ
+- `main` への直接コミットは禁止
+- 命名規則：
+  - 新機能：`feature/issue番号-説明`（例：`feature/42-share-image-9-16`）
+  - バグ修正：`fix/issue番号-説明`
+  - リファクタ：`refactor/issue番号-説明`
+  - データ・問題文修正：`data/issue番号-説明`
+- PR 本文に `Closes #issue番号` を含める（マージ時に Issue が自動クローズされる）
+
+### 14.3 Issue ラベル
+
+| ラベル | 用途 |
+|---|---|
+| `bug` | 動作が壊れている |
+| `enhancement` | UX/実装の改善提案 |
+| `feature` | 新規機能追加 |
+| `refactor` | 内部構造改善（外部仕様変更なし） |
+| `data-quality` | 弁別力低下・適当回答検出・問題文の偏りなど |
+| `i18n` | 翻訳・文字組み・ja/ko 間の差分 |
+| `legal-review` | 商標・出会い系規制法・個人情報保護法絡み |
+| `data-licensing` | BtoB データ販売事業の影響を伴う変更 |
+| `character` | キャラクター画像・メタデータ・実装済み判定 |
+
+運用開始後、Phase 別ラベル（`phase-2` 等）や機能別ラベル（`share`, `compatibility` 等）は必要に応じて追加する。最初から細かすぎるラベル設計は避ける。
+
+### 14.4 QA中の発見の振り分け
+
+QA 中に問題や気になる点を発見した場合、以下の基準で対応する：
+
+| 種別 | 対応 | ラベル |
+|---|---|---|
+| バグ（動作が壊れている） | issue 作成 | `bug` |
+| 改善提案（UX/実装の気になる点） | issue 作成 | `enhancement` |
+| データ品質劣化（弁別力低下、回答パターン異常） | issue 作成 | `data-quality` |
+| 翻訳の違和感・文字組み崩れ | issue 作成 | `i18n` |
+| 法的判断を要する事項 | issue 作成 | `legal-review` |
+| 表記揺れ・誤字 | 即修正、issue 任意 | - |
+| 軽微な所見（機能的には正常だが気になる点） | PR コメントの「所見」欄に記載、issue 化は任意 | - |
+
+**軽微な所見の例**：
+
+- アコーディオンの開閉アニメーションが0.1秒遅い気がする
+- 韓国語版のフォントウェイトが日本語版より気持ち軽い
+- 設問画面のSparkleアイコンが、装飾要素として控えめすぎる気がする
+- 結果画面のシェアボタンの余白が、他のCTAと微妙に違う
+
+これらは「issue化するほどじゃないけど忘れたくない」観察を、PR コメントに残すための運用。後で複数の所見が同じ箇所に集中したら、その時点で issue 化する。
+
+### 14.5 開発サイクル（現フェーズ：MVP-speed-first）
+
+```
+実装
+ └─→ セルフチェック → 指摘あり → 修正 → セルフチェック(再)→ …
+        │
+     指摘なし
+        │
+       手動QA → 問題あり → 修正 → 再チェック → QA(再)→ …
+        │
+     問題なし
+        │
+       PR作成
+```
+
+各ステップは指摘・問題がなくなるまで繰り返してから次へ進む。
+
+QA で問題が見つかり修正した場合の「再チェック」の粒度は**修正規模で判断**する：
+
+- **大規模修正**（複数ファイル変更、ロジック変更等）: フルセルフチェック（typecheck + lint + build）からやり直す
+- **軽微な修正**（typo、文言調整、CSS微調整等）: 該当ファイルの typecheck のみ確認、QA を再実行
+
+`production-safety-first` 移行後（§14.7）は規模に関わらず全てフルセルフチェックからやり直す。
+
+### 14.6 セルフチェック必須項目（コミット前）
+
+```
+pnpm typecheck && pnpm lint && pnpm build
+```
+
+CI で初めて失敗に気づくのは避ける。
+ローカルでこれが通らない状態でのコミット禁止。
+
+### 14.7 production-safety-first 移行時の追加ルール
+
+§4.3 と連動。`production-safety-first` フェーズ移行時は以下を追加する：
+
+- code-review-expert subagent によるレビューを必須化
+  - 指摘事項があれば修正してコミットし、再度同 subagent にレビュー依頼
+  - 指摘事項がなくなったら QA へ進む
+  - QA で問題が見つかり修正した場合も、コードレビューからやり直す
+- E2E テスト（Playwright 想定）を主要フローで整備
+- migration ファイル必須化（Firestore スキーマ変更時）
+- 修正規模に関わらずフルセルフチェック必須（§14.5の例外条項を解除）
+
+### 14.8 QA シナリオ管理
+
+`docs/qa-scenarios.md` に主要シナリオ一覧を管理する。機能追加・変更時にシナリオを追加・更新する。
+
+MVP フェーズでの最重要シナリオ：
+
+1. 40問完走 → 軸スコアリング → 16タイプ判定 → 結果画面表示
+2. 結果保存 → 履歴一覧表示 → 比較ビュー
+3. シェア画像生成（1:1 / 9:16 / 16:9）
+4. 匿名認証 → ソーシャル連携アップグレード（履歴の引き継ぎ確認）
+5. 言語切替（ja ↔ ko）の即時反映と問題文の整合性
+6. 確信度に応じたキャラクターバリエーション切替（standard / shimmer / quiet）
+7. 適当回答フラグ判定（最短時間しきい値、回答パターン検出）
+
+`docs/qa-scenarios.md` の作成は Phase 2 着手時で十分。Phase 1 終盤で雛形を作る。
+
+---
+
+## 15. Architecture Decision Records (ADR)
+
+### 15.1 目的
+
+技術的・戦略的な重要決定の経緯を `docs/decisions/` に記録する。
+
+Claude Code のセッション記憶は揮発性のため、半年後・1年後に「なぜこの設計？」を即座に答えられる文書として残す。
+特に Animalume はデータライセンス事業を前提とするため、**取材・契約交渉・学術的批判への防御材料**としても機能する。
+
+### 15.2 作成基準（迷ったら作る）
+
+- 複数の選択肢を比較検討した
+- 業界の常識・公式の建前と異なる意図的選択
+- 後から変更すると影響範囲が大きい（DB 設計、認証方式、軸スコアリング方式、収益モデル等）
+- 学術的・法的・倫理的判断を含む（「タイプは変化する」前提、出会い系規制法回避、商標方針等）
+
+### 15.3 ファイル命名
+
+`docs/decisions/NNNN-タイトル.md`（4桁ゼロパディング）
+
+例：
+- `0001-mbti-axis-scoring.md`
+- `0002-types-can-change-philosophy.md`
+- `0003-firebase-stack.md`
+
+### 15.4 フォーマット
+
+```
+# タイトル
+
+## 状況
+なぜこの決定が必要だったか。背景・制約・きっかけ。
+
+## 決定
+何を選んだか。一文で要約してから補足する。
+
+## 理由
+なぜそれを選んだか、却下した選択肢と却下理由。
+学術的・法的根拠があれば引用する。
+
+## 結果
+（後から追記）実際どうだったか。
+予想と違った点、副作用、再検討トリガー。
+```
+
+### 15.5 立ち上げ時に書くべき初期 ADR
+
+プロジェクト初期に以下7本を作成する：
+
+| # | タイトル | 重要度 | 理由 |
+|---|---|---|---|
+| 0001 | MBTI 軸スコアリング採用（Big Five / HEXACO 比較） | 高 | 学術的批判への防御 |
+| 0002 | 「タイプは変化する」前提の根拠 | **最高** | 公式 MBTI と対立する哲学的決定。SNS 炎上・取材・データ販売交渉で必ず問われる |
+| 0003 | Firebase / Firestore 選定（Supabase / AWS 比較） | 中 | Cocomi 資産流用との関連 |
+| 0004 | 個人課金なし、データライセンス事業モデル | 高 | 業界常識に逆行する収益判断。投資家・パートナー説明用 |
+| 0005 | キャラクター3バージョン事前生成方式 | 中 | フルバリエーション化判断時の基準点 |
+| 0006 | Cocomi 資産（swipe-deck 等）流用判断 | 中 | プロジェクト分離 vs 資産共有のトレードオフ |
+| 0007 | LINE / Kakao Login 優先（Instagram 後回し） | 中 | 友達相性診断のバイラル設計の根幹 |
+
+優先順位の目安：0002 → 0001 → 0004 → 残り。0002 は SNS 炎上・取材・BtoB 交渉で必ず問われるため最優先。残りは関連事項が動くタイミングで完成度を高める。
+
+### 15.6 ADR 作成のトリガー
+
+以下の場面で「ADR 作成の必要可否」を Claude Code に相談する：
+
+- 仕様検討中に複数案を比較した
+- 既存の §3 Data Strategy / §11 Out of Scope と関連する判断を新たに行った
+- 法務確認・利用規約改訂を伴う仕様変更
+- §4.2 のフェーズ切替条件の議論
+- §13.3 To Be Decided 項目が確定した（確定時は §13.3 から該当項目を削除し、ADR にリンク）
+
+### 15.7 §13.3 との連動
+
+§13.3 To Be Decided は「未決事項リスト」、ADR は「既決事項リスト」の関係。
+未決→既決への遷移は必ず ADR 化を経由する。
+
+---
+
+**Last Updated**: 2026-05-09
+**Version**: 1.2.0（§6 admin ディレクトリ追加 / §7.1 content_published・content_history 追加 / §7.2 管理者権限ルール追加）

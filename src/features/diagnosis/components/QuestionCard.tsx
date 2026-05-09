@@ -7,7 +7,7 @@ import {
   useReducedMotion,
 } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ArrowRight, MousePointerClick } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MousePointerClick, Sparkle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Question } from '@/data/questions/types';
 import type { Axis } from '@/features/diagnosis/logic/types';
@@ -26,6 +26,40 @@ function axisBorderClass(axis: Axis): string {
   if (axis === 'SN') return 'border-l-accent-sage/30';
   if (axis === 'TF') return 'border-l-accent-mist/30';
   return 'border-l-accent-gold/30';
+}
+
+function axisMarkColorClass(axis: Axis): string {
+  if (axis === 'EI') return 'text-accent-rose';
+  if (axis === 'SN') return 'text-accent-sage';
+  if (axis === 'TF') return 'text-accent-mist';
+  return 'text-accent-gold';
+}
+
+function AxisMark({ axis }: { axis: Axis }) {
+  const color = axisMarkColorClass(axis);
+  const shape = {
+    EI: (
+      <svg width="14" height="8" viewBox="0 0 14 8" fill="none" aria-hidden>
+        <path d="M1 7 A6 6 0 0 1 13 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+    SN: (
+      <svg width="12" height="11" viewBox="0 0 12 11" fill="currentColor" aria-hidden>
+        <polygon points="6,0.5 11.5,10.5 0.5,10.5" />
+      </svg>
+    ),
+    TF: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+        <polygon points="6,0.5 11.5,6 6,11.5 0.5,6" />
+      </svg>
+    ),
+    JP: (
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
+        <circle cx="5" cy="5" r="4.5" />
+      </svg>
+    ),
+  }[axis];
+  return <span className={cn('opacity-25', color)}>{shape}</span>;
 }
 
 type Props = {
@@ -123,6 +157,11 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
     >
+      {/* Upper sparkle */}
+      <div className="flex justify-center mb-3 text-ink-mute/40" aria-hidden>
+        <Sparkle className="w-3 h-3" strokeWidth={1.5} />
+      </div>
+
       <div className="relative select-none touch-none">
         {/* Draggable card — free 2D drag, full finger tracking */}
         <motion.div
@@ -134,7 +173,7 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
           animate={controls}
           onDragEnd={handleDragEnd}
           className={cn(
-            'relative bg-bg border border-border rounded-2xl p-6 shadow-soft',
+            'relative bg-bg border border-border rounded-2xl p-6 shadow-editorial-md',
             'cursor-grab active:cursor-grabbing',
             'border-l-[3px]',
             borderClass,
@@ -151,10 +190,17 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
 
           {/* Content */}
           <div className="relative z-10">
-            <p className="text-[11px] tracking-[0.3em] uppercase text-ink-mute mb-4">
-              — Q.{String(index).padStart(2, '0')} —
-            </p>
-            <p className="font-serif text-xl text-ink leading-relaxed mb-8 min-h-[5rem]">
+            {/* Chapter eyebrow with hairlines */}
+            <div className="flex items-center gap-3 text-ink-mute mb-4">
+              <span className="h-px flex-1 bg-current opacity-25" />
+              <span className="text-xs tracking-widest font-medium">Q.{String(index).padStart(2, '0')}</span>
+              <span className="h-px flex-1 bg-current opacity-25" />
+            </div>
+            {/* Axis mark — top-right corner */}
+            <div className="absolute top-0 right-0 pointer-events-none">
+              <AxisMark axis={question.axis} />
+            </div>
+            <p className="font-serif text-xl text-ink leading-relaxed mb-8 min-h-[5rem] whitespace-pre-line question-bracket text-center">
               {question.content}
             </p>
 
@@ -176,7 +222,7 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
                   className="absolute inset-0 rounded-xl border border-accent-rose pointer-events-none"
                   style={{ opacity: aHighlight }}
                 />
-                <span className="leading-relaxed flex-1">{question.optionA.text}</span>
+                <span className="leading-relaxed flex-1 whitespace-pre-line text-left">{question.optionA.text}</span>
                 <ArrowLeft className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
               </button>
 
@@ -196,12 +242,17 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
                   className="absolute inset-0 rounded-xl border border-accent-sage pointer-events-none"
                   style={{ opacity: bHighlight }}
                 />
-                <span className="text-right leading-relaxed flex-1">{question.optionB.text}</span>
+                <span className="leading-relaxed flex-1 whitespace-pre-line text-right">{question.optionB.text}</span>
                 <ArrowRight className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
               </button>
             </div>
           </div>
         </motion.div>
+      </div>
+
+      {/* Lower sparkle */}
+      <div className="flex justify-center mt-3 text-ink-mute/40" aria-hidden>
+        <Sparkle className="w-3 h-3" strokeWidth={1.5} />
       </div>
 
       {/* Swipe hint — first question only */}

@@ -19,6 +19,9 @@ export default {
           DEFAULT: '#FAF9F6', // オフホワイト基調
           subtle: '#F4F2EC',
           muted: '#EDEAE3',
+          rose: '#FAF5F3',   // 診断11-20問、微ピンク
+          sage: '#F7FAF6',   // 診断21-30問、微セージ
+          gold: '#FAF7F1',   // 診断31-40問、微ゴールド
         },
         ink: {
           DEFAULT: '#2A2724', // チャコール
@@ -58,6 +61,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          'Noto Sans JP',
           'Pretendard',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -86,6 +90,9 @@ export default {
       },
       boxShadow: {
         soft: '0 1px 2px rgba(42,39,36,0.04), 0 4px 16px rgba(42,39,36,0.04)',
+        editorial: '0 8px 32px -12px rgba(42,41,37,0.04)',
+        'editorial-md': '0 12px 48px -16px rgba(42,41,37,0.06)',
+        'editorial-lg': '0 16px 64px -20px rgba(42,41,37,0.08)',
       },
       keyframes: {
         'fade-in': {

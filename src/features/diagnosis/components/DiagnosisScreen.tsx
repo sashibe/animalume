@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { useDiagnosisStore } from '../store';
 import { sampleQuestions } from '@/data/questions';
 import { buildDiagnosisResult } from '../logic';
@@ -78,18 +79,26 @@ export function DiagnosisScreen() {
       const duration = startedAt ? (Date.now() - startedAt) / 1000 : 0;
       const questionIds = questions.map((q) => q.id);
 
-      saveResult(result, newAnswers, questionIds, duration)
+      // Race saveResult against a 4-second timeout so navigation always happens
+      // even when Firebase Auth hangs (no network / wrong config)
+      Promise.race([
+        saveResult(result, newAnswers, questionIds, duration),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+      ])
         .then((resultId) => {
           navigate(`/result/${resultId ?? 'local'}`, { state: { result } });
         })
         .catch(() => {
-          navigate('/result/local', { state: { result: buildDiagnosisResult(newAnswers) } });
+          navigate('/result/local', { state: { result } });
         });
     }
   }
 
+  const phaseBackgrounds = ['bg-bg', 'bg-bg-rose', 'bg-bg-sage', 'bg-bg-gold'];
+  const progressPhase = Math.min(Math.floor(currentIndex / 10), phaseBackgrounds.length - 1);
+
   return (
-    <main className="min-h-full safe-top safe-bottom flex flex-col">
+    <main className={cn('min-h-full safe-top safe-bottom flex flex-col transition-colors duration-1000', phaseBackgrounds[progressPhase])}>
       <div className="container-app flex-1 flex flex-col py-8 gap-4">
         {/* Progress */}
         <div className="space-y-2">

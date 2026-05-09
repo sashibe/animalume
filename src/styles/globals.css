@@ -13,11 +13,15 @@
 
   body {
     @apply bg-bg text-ink antialiased;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: 'Noto Sans JP', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-feature-settings: 'palt';
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    line-break: strict;
   }
 
   /* セーフエリア対応（iOS notch等） */
@@ -48,6 +52,16 @@
 }
 
 @layer utilities {
+  /* 質問文を鉤括弧で囲む（CSS pseudo-elements） */
+  .question-bracket::before {
+    content: '「';
+    color: rgb(156 152 143 / 0.65);
+  }
+  .question-bracket::after {
+    content: '」';
+    color: rgb(156 152 143 / 0.65);
+  }
+
   .bg-watercolor {
     background-image:
       radial-gradient(circle at 18% 22%, rgba(217,165,160,0.18), transparent 55%),

@@ -13,7 +13,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     function isAdmin() {
-      return isSignedIn() && request.auth.token.admin == true;
+      return isSignedIn() && request.auth.token.role == 'admin';
     }
 
     // -----------------------------------------------------------
@@ -64,6 +64,23 @@ service cloud.firestore {
     // 管理者のみ
     // -----------------------------------------------------------
     match /analytics_aggregates/{periodId} {
+      allow read, write: if isAdmin();
+    }
+
+    // -----------------------------------------------------------
+    // content_published/{type}/items/{id}
+    // 誰でも読める、書き込みは admin のみ
+    // -----------------------------------------------------------
+    match /content_published/{type}/items/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // -----------------------------------------------------------
+    // content_history/{type}/{id}/{historyId}
+    // admin のみ読み書き
+    // -----------------------------------------------------------
+    match /content_history/{type}/{id}/{historyId} {
       allow read, write: if isAdmin();
     }
 
