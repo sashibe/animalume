@@ -1,180 +1,242 @@
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import type { Locale, Question, Axis } from '../shared/types';
-import { useAutoDraft, loadDraftOrFallback } from '../editor/useAutoDraft';
+import { useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { LangTabs } from '../editor/LangTabs';
 import { LocalizedField } from '../editor/LocalizedField';
 import { EditorShell } from '../editor/EditorShell';
-import { SaveIndicator } from '../editor/SaveIndicator';
+import { SourceSaveIndicator } from '../editor/SaveIndicator';
 import { AxisSelector } from './AxisSelector';
+import { FormatSelector } from './FormatSelector';
+import { DifficultySelector } from './DifficultySelector';
+import { TagsEditor } from './TagsEditor';
 import { WeightSelector } from './WeightSelector';
 import { QuestionPreview } from './QuestionPreview';
-import { newQuestion, AXIS_POLES } from './question-helpers';
-import { usePublish } from '../publish/usePublish';
-import { PublishDialog } from '../publish/PublishDialog';
-import { db } from '@/lib/firebase';
-import { useAuth } from '@/lib/auth';
+import { loadAllQuestions, saveQuestionsByAxis } from '../sources/question-source';
+import { useSourceSave } from '../sources/use-source-save';
+import type { Locale } from '../shared/types';
+import type { SourceQuestion, Axis } from '../shared/source-types';
 
 type Props = {
   questionId: string;
-  initial?: Question;
-  index?: number;
-  total?: number;
   onBack?: () => void;
 };
 
-export function QuestionEditor({
-  questionId, initial, index = 1, total = 40, onBack,
-}: Props) {
-  const { user } = useAuth();
-  const [data, setData] = useState<Question>(initial ?? newQuestion());
+export function QuestionEditor({ questionId, onBack }: Props) {
+  const [allQuestions, setAllQuestions] = useState<SourceQuestion[] | null>(null);
   const [lang, setLang] = useState<Locale>('ja');
-  const [loaded, setLoaded] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const { state: saveState, save } = useSourceSave();
 
   useEffect(() => {
-    loadDraftOrFallback('question', questionId, initial ?? newQuestion()).then((d) => {
-      setData(d);
-      setLoaded(true);
-    });
-  }, [questionId, initial]);
+    let cancelled = false;
+    loadAllQuestions()
+      .then((qs) => {
+        if (!cancelled) setAllQuestions(qs);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => { cancelled = true; };
+  }, []);
 
-  useAutoDraft('question', questionId, data, {
-    enabled: loaded,
-    onSaved: () => {
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    },
-  });
+  const currentQuestion = useMemo(() => {
+    return allQuestions?.find((q) => q.id === questionId) ?? null;
+  }, [allQuestions, questionId]);
 
-  const pub = usePublish<Question>({
-    db,
-    userId: user?.uid ?? 'anonymous',
-    contentType: 'question',
-    contentId: questionId,
-  });
-
-  const update = (patch: Partial<Question>) => {
-    setSaveStatus('saving');
-    setData({ ...data, ...patch });
+  const updateCurrent = (patch: Partial<SourceQuestion>) => {
+    if (!allQuestions || !currentQuestion) return;
+    const next = allQuestions.map((q) =>
+      q.id === questionId ? { ...q, ...patch } : q,
+    );
+    setAllQuestions(next);
   };
 
-  const missing = {
-    ja: !data.content.ja.trim() || !data.optionA.text.ja.trim() || !data.optionB.text.ja.trim(),
-    ko: !data.content.ko.trim() || !data.optionA.text.ko.trim() || !data.optionB.text.ko.trim(),
+  const handleSave = () => {
+    if (!allQuestions || !currentQuestion) return;
+    const axisQuestions = allQuestions.filter((q) => q.axis === currentQuestion.axis);
+    save(() => saveQuestionsByAxis(currentQuestion.axis, axisQuestions));
   };
 
-  const canPublish = !missing.ja && !missing.ko;
-  const poles = AXIS_POLES[data.axis];
+  const missing = useMemo(() => {
+    if (!currentQuestion) return { ja: false, ko: false };
+    return {
+      ja:
+        !currentQuestion.content.ja.trim() ||
+        !currentQuestion.optionA.text.ja.trim() ||
+        !currentQuestion.optionB.text.ja.trim(),
+      ko:
+        !currentQuestion.content.ko.trim() ||
+        !currentQuestion.optionA.text.ko.trim() ||
+        !currentQuestion.optionB.text.ko.trim(),
+    };
+  }, [currentQuestion]);
+
+  const positionInfo = useMemo(() => {
+    if (!allQuestions || !currentQuestion) return { index: 1, total: 80 };
+    const total = allQuestions.length;
+    const index = allQuestions.findIndex((q) => q.id === questionId) + 1;
+    return { index, total };
+  }, [allQuestions, currentQuestion, questionId]);
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-md text-sm">
+        <p className="font-medium text-red-700 mb-2">読み込みエラー</p>
+        <p className="text-stone-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!allQuestions || !currentQuestion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-stone-500">
+        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        読み込み中…
+      </div>
+    );
+  }
 
   return (
-    <>
-      <EditorShell
-        title={`問題 ${String(index).padStart(2, '0')} - ${data.axis}`}
-        subtitle={poles.label}
-        onBack={onBack}
-        saveIndicator={<SaveIndicator status={saveStatus} />}
-        langTabs={<LangTabs value={lang} onChange={setLang} missing={missing} />}
-        onPublish={() => pub.open(data)}
-        publishDisabled={!canPublish}
-        preview={<QuestionPreview question={data} lang={lang} index={index} total={total} />}
-      >
-        {!loaded ? (
-          <div className="text-sm text-stone-400">読み込み中…</div>
-        ) : (
-          <>
-            <section className="space-y-3">
-              <h2 className="text-sm font-medium text-stone-700">軸</h2>
-              <AxisSelector
-                value={data.axis}
-                onChange={(axis: Axis) => update({ axis })}
-              />
-            </section>
+    <EditorShell
+      title={`${currentQuestion.id} - ${currentQuestion.axis}軸`}
+      subtitle={currentQuestion.format}
+      onBack={onBack}
+      saveIndicator={<SourceSaveIndicator state={saveState} />}
+      langTabs={<LangTabs value={lang} onChange={setLang} missing={missing} />}
+      onPublish={handleSave}
+      publishLabel={saveState.status === 'saving' ? '保存中…' : '保存'}
+      publishDisabled={saveState.status === 'saving'}
+      preview={
+        <QuestionPreview
+          question={currentQuestion}
+          lang={lang}
+          index={positionInfo.index}
+          total={positionInfo.total}
+        />
+      }
+    >
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-stone-700">基本属性</h2>
+        <div className="rounded-lg border border-stone-200 bg-white p-4 space-y-4">
+          <div>
+            <p className="text-sm text-stone-700 mb-2">軸</p>
+            <AxisSelector
+              value={currentQuestion.axis}
+              onChange={(axis: Axis) => updateCurrent({ axis })}
+            />
+          </div>
+          <div>
+            <p className="text-sm text-stone-700 mb-2">形式</p>
+            <FormatSelector
+              value={currentQuestion.format}
+              onChange={(format) => updateCurrent({ format })}
+            />
+          </div>
+          <div>
+            <p className="text-sm text-stone-700 mb-2">難易度</p>
+            <DifficultySelector
+              value={currentQuestion.difficulty}
+              onChange={(difficulty) => updateCurrent({ difficulty })}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="active-toggle"
+              checked={currentQuestion.active}
+              onChange={(e) => updateCurrent({ active: e.target.checked })}
+              className="rounded border-stone-300"
+            />
+            <label htmlFor="active-toggle" className="text-sm text-stone-700">
+              この問題を出題対象にする (active)
+            </label>
+          </div>
+        </div>
+      </section>
 
-            <section className="space-y-3">
-              <h2 className="text-sm font-medium text-stone-700">問題文（状況提示）</h2>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <LocalizedField
-                  label="状況"
-                  value={data.content}
-                  onChange={(content) => update({ content })}
-                  lang={lang}
-                  kind="questionBody"
-                  hint="例：自分が間違っていたと気づいたとき。プレビューでは自動で「」が付きます。"
-                />
-              </div>
-            </section>
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-stone-700">問題文</h2>
+        <div className="rounded-lg border border-stone-200 bg-white p-4">
+          <LocalizedField
+            label="状況"
+            value={currentQuestion.content}
+            onChange={(content) => updateCurrent({ content })}
+            lang={lang}
+            kind="questionBody"
+            multiline
+            rows={3}
+            hint="改行は \n（Enter）で表現。プレビューで両言語の見え方を確認できます。"
+          />
+        </div>
+      </section>
 
-            <section className="space-y-3">
-              <h2 className="text-sm font-medium text-stone-700">選択肢</h2>
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                回答カードは <span className="font-mono">14文字以内（日）/ 12文字以内（韓）</span>。物理的に崩れるので超過入力はブロックされます。
-              </p>
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-stone-700">選択肢</h2>
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          回答カードは <span className="font-mono">14文字以内（日）/ 12文字以内（韓）</span> 推奨。物理的に崩れるため超過時は警告表示。
+        </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="rounded-lg border border-stone-200 bg-white p-4 space-y-3">
-                  <div className="text-xs font-medium text-stone-500 uppercase tracking-wider">
-                    選択肢 A → {data.optionA.weight >= 0 ? poles.positive : poles.negative}
-                  </div>
-                  <LocalizedField
-                    label="本文"
-                    value={data.optionA.text}
-                    onChange={(text) => update({ optionA: { ...data.optionA, text } })}
-                    lang={lang}
-                    kind="answerCard"
-                  />
-                  <WeightSelector
-                    value={data.optionA.weight}
-                    onChange={(w) => update({ optionA: { ...data.optionA, weight: w } })}
-                    poleLabel={data.optionA.weight >= 0 ? poles.positive : poles.negative}
-                  />
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="rounded-lg border border-stone-200 bg-white p-4 space-y-3">
+            <div className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+              選択肢 A
+            </div>
+            <LocalizedField
+              label="本文"
+              value={currentQuestion.optionA.text}
+              onChange={(text) =>
+                updateCurrent({
+                  optionA: { ...currentQuestion.optionA, text },
+                })
+              }
+              lang={lang}
+              kind="answerCard"
+            />
+            <WeightSelector
+              value={currentQuestion.optionA.weight}
+              onChange={(w) =>
+                updateCurrent({
+                  optionA: { ...currentQuestion.optionA, weight: w },
+                })
+              }
+              poleLabel={`${currentQuestion.axis} の寄与度`}
+            />
+          </div>
 
-                <div className="rounded-lg border border-stone-200 bg-white p-4 space-y-3">
-                  <div className="text-xs font-medium text-stone-500 uppercase tracking-wider">
-                    選択肢 B → {data.optionB.weight >= 0 ? poles.positive : poles.negative}
-                  </div>
-                  <LocalizedField
-                    label="本文"
-                    value={data.optionB.text}
-                    onChange={(text) => update({ optionB: { ...data.optionB, text } })}
-                    lang={lang}
-                    kind="answerCard"
-                  />
-                  <WeightSelector
-                    value={data.optionB.weight}
-                    onChange={(w) => update({ optionB: { ...data.optionB, weight: w } })}
-                    poleLabel={data.optionB.weight >= 0 ? poles.positive : poles.negative}
-                  />
-                </div>
-              </div>
+          <div className="rounded-lg border border-stone-200 bg-white p-4 space-y-3">
+            <div className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+              選択肢 B
+            </div>
+            <LocalizedField
+              label="本文"
+              value={currentQuestion.optionB.text}
+              onChange={(text) =>
+                updateCurrent({
+                  optionB: { ...currentQuestion.optionB, text },
+                })
+              }
+              lang={lang}
+              kind="answerCard"
+            />
+            <WeightSelector
+              value={currentQuestion.optionB.weight}
+              onChange={(w) =>
+                updateCurrent({
+                  optionB: { ...currentQuestion.optionB, weight: w },
+                })
+              }
+              poleLabel={`${currentQuestion.axis} の寄与度`}
+            />
+          </div>
+        </div>
+      </section>
 
-              <div className="flex justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => update({
-                    optionA: { ...data.optionA, weight: -data.optionA.weight },
-                    optionB: { ...data.optionB, weight: -data.optionB.weight },
-                  })}
-                  className="text-xs"
-                >
-                  A↔B の極性を入れ替え
-                </Button>
-              </div>
-            </section>
-          </>
-        )}
-      </EditorShell>
-
-      <PublishDialog
-        open={pub.dialogOpen}
-        contentLabel={`問題 ${String(index).padStart(2, '0')} - ${data.axis}`}
-        draft={pub.draft as Question}
-        fetchPublished={pub.fetchPublished}
-        onPublish={pub.publish}
-        onClose={pub.close}
-      />
-    </>
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-stone-700">タグ</h2>
+        <TagsEditor
+          tags={currentQuestion.tags}
+          onChange={(tags) => updateCurrent({ tags })}
+        />
+      </section>
+    </EditorShell>
   );
 }

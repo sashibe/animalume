@@ -8,8 +8,7 @@ import { UiStringsList } from './lists/UiStringsList';
 import { TypeEditor } from './types/TypeEditor';
 import { QuestionEditor } from './questions/QuestionEditor';
 import { UiStringsEditor } from './ui-strings/UiStringsEditor';
-import { SourceTest } from './debug/SourceTest';
-import type { TypeCode } from './shared/types';
+import type { MbtiType } from './shared/source-types';
 
 export function AdminRoutes() {
   return (
@@ -35,7 +34,6 @@ function GuardedRoutes() {
           <Route path="types/:typeCode" element={<TypeEditorPage />} />
           <Route path="questions/:questionId" element={<QuestionEditorPage />} />
           <Route path="ui-strings/edit" element={<UiStringsEditorPage />} />
-          <Route path="debug/sources" element={<SourceTest />} />
         </Route>
       </Routes>
     </AdminGate>
@@ -69,7 +67,7 @@ function TypeEditorPage() {
   const navigate = useNavigate();
   return (
     <TypeEditor
-      typeCode={(typeCode ?? 'INTJ') as TypeCode}
+      typeCode={(typeCode ?? 'INTJ') as MbtiType}
       onBack={() => navigate('/admin/types')}
     />
   );

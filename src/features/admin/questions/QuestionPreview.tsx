@@ -1,8 +1,9 @@
 import { SmartText } from '../shared/SmartText';
-import type { Locale, Question } from '../shared/types';
+import type { Locale } from '../shared/types';
+import type { SourceQuestion } from '../shared/source-types';
 
 type Props = {
-  question: Question;
+  question: SourceQuestion;
   lang: Locale;
   index?: number;
   total?: number;
@@ -36,9 +37,9 @@ export function QuestionPreview({ question, lang, index = 1, total = 40 }: Props
           <div className="rounded-xl border border-stone-200/70 bg-white/60 px-5 py-8 space-y-8">
             <div className="text-center">
               <div className="text-[11px] tracking-[0.2em] text-stone-400 mb-4">
-                Q.{String(index).padStart(2, '0')}
+                {question.id.toUpperCase()}
               </div>
-              <h2 className="font-serif text-[22px] leading-[1.5] text-stone-800">
+              <h2 className="font-serif text-[22px] leading-[1.5] text-stone-800 whitespace-pre-line">
                 {content ? `「${content}」` : <span className="text-stone-300">（問題文未入力）</span>}
               </h2>
             </div>
