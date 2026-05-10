@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Compass, Sparkles, Users } from 'lucide-react';
@@ -276,6 +276,12 @@ export function ResultScreen() {
           >
             {t('result.retake')}
           </button>
+          <Link
+            to="/history"
+            className="w-full py-3.5 rounded-full border border-border text-ink text-sm font-medium text-center hover:bg-bg-subtle transition"
+          >
+            {t('history.link_from_result')}
+          </Link>
         </div>
 
         {/* ── Footer ── */}
