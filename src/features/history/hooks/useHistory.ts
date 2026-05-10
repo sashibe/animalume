@@ -62,6 +62,25 @@ export function useHistory() {
   return { items, loading, error };
 }
 
+/** 比較ビュー用: 最新2件を返す */
+export function useComparison(): {
+  current: HistoryItem | null;
+  previous: HistoryItem | null;
+  loading: boolean;
+} {
+  const { items, loading } = useHistory();
+
+  if (loading || items.length < 2) {
+    return { current: null, previous: null, loading };
+  }
+
+  return {
+    current: items[0],  // 最新（降順1番目）
+    previous: items[1], // 1つ前
+    loading: false,
+  };
+}
+
 /** ホーム画面用: limit(1) で履歴の有無だけ確認 */
 export function useHasHistory() {
   const [hasHistory, setHasHistory] = useState(false);

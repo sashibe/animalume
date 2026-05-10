@@ -104,6 +104,21 @@
     "line_share": "LINE でシェア",
     "save_image": "画像を保存"
   },
+  "compare": {
+    "section_label": "THE CHANGE",
+    "title": "あなたの変化",
+    "reading_label": "01 — Reading",
+    "spectrum_label": "02 — Spectrum",
+    "type_changed": "{{prev}} から {{curr}} へ。\nあなたの中で何かが動いていたのかもしれません。",
+    "type_changed_subtext": "タイプの変化は、あなたの中の優先順位や向き合い方がシフトしたサインです。",
+    "type_unchanged": "あなたは引き続き {{type}}。\n核は変わっていません。",
+    "type_unchanged_subtext": "細部では揺らぎながら、あなたの本質は保たれています。",
+    "axis_previous": "過去",
+    "axis_current": "現在",
+    "cta_retake": "もう一度受ける",
+    "cta_view_all": "すべての記録を見る",
+    "need_two_readings": "比較するには2回以上の診断が必要です"
+  },
   "history": {
     "title": "あなたの記録",
     "subtitle": "変化の軌跡を辿る",

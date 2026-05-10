@@ -59,6 +59,18 @@ export function HistoryScreen() {
             </div>
           )}
 
+          {/* ── 比較ビューへの導線（2件以上ある時のみ） ── */}
+          {!loading && items.length >= 2 && (
+            <div className="mb-8">
+              <Link
+                to="/compare"
+                className="block text-center py-4 bg-ink text-bg rounded-full text-sm font-medium hover:opacity-90 transition"
+              >
+                {t('history.cta_view_change')}
+              </Link>
+            </div>
+          )}
+
           {/* ── リスト本体 ── */}
           {loading ? (
             <div className="flex-1 flex items-center justify-center">

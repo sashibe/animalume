@@ -104,6 +104,21 @@
     "line_share": "LINE에 공유",
     "save_image": "이미지 저장"
   },
+  "compare": {
+    "section_label": "THE CHANGE",
+    "title": "나의 변화",
+    "reading_label": "01 — Reading",
+    "spectrum_label": "02 — Spectrum",
+    "type_changed": "{{prev}} 에서 {{curr}} 로。\n당신 안에서 무언가가 움직이고 있었는지도 모릅니다。",
+    "type_changed_subtext": "유형의 변화는, 당신 안의 우선순위나 대처 방식이 바뀐 신호입니다。",
+    "type_unchanged": "당신은 여전히 {{type}}。\n핵심은 변하지 않았습니다。",
+    "type_unchanged_subtext": "세부적으로는 흔들리면서도, 당신의 본질은 유지되고 있습니다。",
+    "axis_previous": "이전",
+    "axis_current": "현재",
+    "cta_retake": "다시 받기",
+    "cta_view_all": "모든 기록 보기",
+    "need_two_readings": "비교하려면 2회 이상의 진단이 필요합니다"
+  },
   "history": {
     "title": "나의 기록",
     "subtitle": "변화의 궤적을 따라가다",
