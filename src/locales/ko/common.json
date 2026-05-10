@@ -26,6 +26,13 @@
     "milestone_30": "마지막 10문제"
   },
   "result": {
+    "loading_label": "— LOADING —",
+    "loading_text": "지난 Reading을 불러오고 있습니다",
+    "error": {
+      "not_accessible": "이 Reading은 표시할 수 없습니다",
+      "not_found": "Reading을 찾을 수 없습니다",
+      "generic": "열 수 없었습니다"
+    },
     "your_type": "당신의 유형",
     "your_type_eyebrow": "Your Type",
     "share": "공유하기",

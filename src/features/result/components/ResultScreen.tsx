@@ -104,7 +104,7 @@ export function ResultScreen() {
   const needsFetch = !stateResult && !!resultId && resultId !== 'local';
   const [result, setResult] = useState<DiagnosisResult | undefined>(stateResult);
   const [fetchLoading, setFetchLoading] = useState(needsFetch);
-  const [fetchFailed, setFetchFailed] = useState(false);
+  const [fetchError, setFetchError] = useState<'not_found' | 'not_accessible' | 'generic' | null>(null);
 
   useEffect(() => {
     if (!needsFetch) return;
@@ -112,7 +112,7 @@ export function ResultScreen() {
     getDoc(doc(db, 'results', resultId!))
       .then((snap) => {
         if (!snap.exists()) {
-          setFetchFailed(true);
+          setFetchError('not_found');
           return;
         }
         const data = snap.data();
@@ -123,7 +123,13 @@ export function ResultScreen() {
           confidence: data.confidence,
         });
       })
-      .catch(() => setFetchFailed(true))
+      .catch((error: { code?: string }) => {
+        if (error?.code === 'permission-denied') {
+          setFetchError('not_accessible');
+        } else {
+          setFetchError('generic');
+        }
+      })
       .finally(() => setFetchLoading(false));
   // needsFetch は resultId と stateResult から導出されるため初回のみ実行でよい
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,16 +137,20 @@ export function ResultScreen() {
 
   if (fetchLoading) {
     return (
-      <div className="min-h-full flex items-center justify-center">
-        <p className="text-sm text-ink-mute">{t('common.loading')}</p>
+      <div className="min-h-full flex flex-col items-center justify-center gap-3">
+        <p className="text-[11px] tracking-[0.32em] text-ink-mute uppercase">
+          {t('result.loading_label')}
+        </p>
+        <p className="text-sm text-ink-mute">{t('result.loading_text')}</p>
       </div>
     );
   }
 
-  if (!result || fetchFailed) {
+  if (!result || fetchError) {
+    const errorKey = fetchError ?? 'generic';
     return (
       <div className="min-h-full flex flex-col items-center justify-center gap-4 p-8">
-        <p className="text-ink-soft text-center">{t('common.error')}</p>
+        <p className="text-ink-soft text-center">{t(`result.error.${errorKey}`)}</p>
         <button
           type="button"
           onClick={() => navigate('/')}

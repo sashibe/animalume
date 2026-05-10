@@ -26,6 +26,13 @@
     "milestone_30": "ラスト10問"
   },
   "result": {
+    "loading_label": "— LOADING —",
+    "loading_text": "過去のReadingを開いています",
+    "error": {
+      "not_accessible": "このReadingは表示できません",
+      "not_found": "Readingが見つかりませんでした",
+      "generic": "うまく開けませんでした"
+    },
     "your_type": "あなたのタイプ",
     "your_type_eyebrow": "Your Type",
     "share": "シェアする",
