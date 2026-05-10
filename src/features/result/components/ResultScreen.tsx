@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Compass, Sparkles, Users } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
 import { CharacterFrame } from './CharacterFrame';
 import { ShareModal } from '@/features/share/components/ShareModal';
 import { getTypeMeta } from '@/data/types';
@@ -13,6 +14,7 @@ import type { DiagnosisResult, Axis } from '@/features/diagnosis/logic/types';
 import type { QuestionLocale } from '@/data/questions/types';
 import { GROUP_OF, GROUP_ACCENT } from '@/lib/group';
 import { cn } from '@/lib/cn';
+import { db } from '@/lib/firebase';
 
 const AXIS_SIDE_LABELS: Record<Axis, [string, string]> = {
   EI: ['E', 'I'],
@@ -92,11 +94,50 @@ export function ResultScreen() {
   const navigate = useNavigate();
   const { resultId } = useParams();
   const { state } = useLocation();
-  const result = state?.result as DiagnosisResult | undefined;
+  const stateResult = state?.result as DiagnosisResult | undefined;
   const locale = (i18n.language.startsWith('ko') ? 'ko' : 'ja') as QuestionLocale;
   const [isShareOpen, setIsShareOpen] = useState(false);
 
-  if (!result) {
+  // 1. state から即時取得（診断完了後の遷移、最速パス）
+  // 2. state がない場合は Firestore から取得（履歴からの遷移など）
+  // 3. resultId === 'local' は Firestore 未保存のローカル結果なので fetch しない
+  const needsFetch = !stateResult && !!resultId && resultId !== 'local';
+  const [result, setResult] = useState<DiagnosisResult | undefined>(stateResult);
+  const [fetchLoading, setFetchLoading] = useState(needsFetch);
+  const [fetchFailed, setFetchFailed] = useState(false);
+
+  useEffect(() => {
+    if (!needsFetch) return;
+
+    getDoc(doc(db, 'results', resultId!))
+      .then((snap) => {
+        if (!snap.exists()) {
+          setFetchFailed(true);
+          return;
+        }
+        const data = snap.data();
+        setResult({
+          type: data.type,
+          scores: data.scores,
+          strengths: data.strengths,
+          confidence: data.confidence,
+        });
+      })
+      .catch(() => setFetchFailed(true))
+      .finally(() => setFetchLoading(false));
+  // needsFetch は resultId と stateResult から導出されるため初回のみ実行でよい
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (fetchLoading) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <p className="text-sm text-ink-mute">{t('common.loading')}</p>
+      </div>
+    );
+  }
+
+  if (!result || fetchFailed) {
     return (
       <div className="min-h-full flex flex-col items-center justify-center gap-4 p-8">
         <p className="text-ink-soft text-center">{t('common.error')}</p>
