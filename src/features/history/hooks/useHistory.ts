@@ -61,7 +61,10 @@ export function useHistory() {
         });
         setItems(results);
       })
-      .catch((e: Error) => setError(e))
+      .catch((e: Error) => {
+        console.error('[useHistory effect] Firestore error:', e);
+        setError(e);
+      })
       .finally(() => setLoading(false));
   }, [user, authLoading]);
 
@@ -102,8 +105,12 @@ export function useHasHistory() {
     );
 
     getDocs(q)
-      .then((snap) => setHasHistory(!snap.empty))
-      .catch(() => {});
+      .then((snap) => {
+        setHasHistory(!snap.empty);
+      })
+      .catch((e) => {
+        console.error('[useHasHistory] Firestore error:', e);
+      });
   }, [user, authLoading]);
 
   return hasHistory;
