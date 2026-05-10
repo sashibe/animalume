@@ -7,7 +7,10 @@ import {
   getDocs,
   limit,
 } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+// useAuth() を再利用して onAuthStateChanged の購読を共有する（DRY）
+// auth.currentUser の同期参照は SDK の非同期セッション復元完了前に null を返すため使わない
+import { useAuth } from '@/lib/auth';
 import type { MbtiType, AxisScores } from '@/features/diagnosis/logic/types';
 
 export interface HistoryItem {
@@ -21,12 +24,15 @@ export interface HistoryItem {
 }
 
 export function useHistory() {
+  const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const user = auth.currentUser;
+    // auth 復元中は待機（loading:true のまま）
+    if (authLoading) return;
+
     if (!user) {
       setLoading(false);
       return;
@@ -57,7 +63,7 @@ export function useHistory() {
       })
       .catch((e: Error) => setError(e))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user, authLoading]);
 
   return { items, loading, error };
 }
@@ -83,11 +89,11 @@ export function useComparison(): {
 
 /** ホーム画面用: limit(1) で履歴の有無だけ確認 */
 export function useHasHistory() {
+  const { user, loading: authLoading } = useAuth();
   const [hasHistory, setHasHistory] = useState(false);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
+    if (authLoading || !user) return;
 
     const q = query(
       collection(db, 'results'),
@@ -98,7 +104,7 @@ export function useHasHistory() {
     getDocs(q)
       .then((snap) => setHasHistory(!snap.empty))
       .catch(() => {});
-  }, []);
+  }, [user, authLoading]);
 
   return hasHistory;
 }
