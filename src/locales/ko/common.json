@@ -97,6 +97,20 @@
     "line_share": "LINE에 공유",
     "save_image": "이미지 저장"
   },
+  "history": {
+    "title": "나의 기록",
+    "subtitle": "변화의 궤적을 따라가다",
+    "section_label": "READINGS",
+    "empty": "아직 Reading이 없습니다",
+    "empty_cta": "첫 번째 진단 받기",
+    "link_from_result": "기록 보기",
+    "link_from_home": "지난 Reading",
+    "cta_view_change": "최근 변화 보기",
+    "digest": {
+      "your_type_was": "YOUR TYPE WAS",
+      "open_reading": "이 Reading 열기"
+    }
+  },
   "auth": {
     "sign_in_title": "— 로그인 —",
     "sign_in_subtitle": "기록을 저장하고, 당신의 변화를 발견하세요",

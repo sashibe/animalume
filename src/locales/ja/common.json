@@ -97,6 +97,20 @@
     "line_share": "LINE でシェア",
     "save_image": "画像を保存"
   },
+  "history": {
+    "title": "あなたの記録",
+    "subtitle": "変化の軌跡を辿る",
+    "section_label": "READINGS",
+    "empty": "まだ Reading がありません",
+    "empty_cta": "最初の診断を受ける",
+    "link_from_result": "履歴を見る",
+    "link_from_home": "過去の Reading",
+    "cta_view_change": "最新の変化を見る",
+    "digest": {
+      "your_type_was": "YOUR TYPE WAS",
+      "open_reading": "このReadingを開く"
+    }
+  },
   "auth": {
     "sign_in_title": "— サインイン —",
     "sign_in_subtitle": "履歴を保存して、あなたの変化を見つけよう",

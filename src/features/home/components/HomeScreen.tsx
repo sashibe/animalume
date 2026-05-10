@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ensureAnonymousAuth } from '@/lib/firebase';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useDiagnosisStore } from '@/features/diagnosis/store';
+import { useHasHistory } from '@/features/history/hooks/useHistory';
 
 export function HomeScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const reset = useDiagnosisStore((s) => s.reset);
   const [authError, setAuthError] = useState<string | null>(null);
+  const hasHistory = useHasHistory();
 
   useEffect(() => {
     if (!import.meta.env.VITE_FIREBASE_API_KEY) return;
@@ -45,6 +47,15 @@ export function HomeScreen() {
           >
             {t('home.cta_start')}
           </button>
+
+          {hasHistory && (
+            <Link
+              to="/history"
+              className="text-sm text-ink-mute hover:text-ink transition"
+            >
+              {t('history.link_from_home')}
+            </Link>
+          )}
 
           {authError && (
             <p className="text-xs text-ink-mute">Firebase未設定（.env未投入）</p>
