@@ -4,6 +4,14 @@ import { Helmet } from 'react-helmet-async';
 import { CharacterImage } from '@/components/character/CharacterImage';
 import { getTypeMeta } from '@/data/types';
 import { useComparison } from '../hooks/useHistory';
+import {
+  analyzeAxisChange,
+  findAxisInterpretation,
+  findGroupTransition,
+  getSameDayInterpretation,
+  getMinimalChangeInterpretation,
+  TYPE_TO_GROUP,
+} from '../lib/interpretations';
 import type { QuestionLocale } from '@/data/questions/types';
 import type { Axis } from '@/features/diagnosis/logic/types';
 
@@ -14,14 +22,13 @@ function formatDate(d: Date): string {
   return `${y}.${m}.${day}`;
 }
 
-// Phase 3.1 で実装予定:
-// const interpretations = {
-//   EI: { I_to_E: "...", E_to_I: "..." },
-//   SN: { S_to_N: "...", N_to_S: "..." },
-//   TF: { T_to_F: "...", F_to_T: "..." },
-//   JP: { J_to_P: "...", P_to_J: "..." },
-// };
-// 軸の変化方向 × 強度（±20%以上 / 以下）で出し分け
+function isSameDay(d1: Date, d2: Date): boolean {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
 
 type AxisBarProps = {
   axis: Axis;
@@ -126,9 +133,47 @@ export function CompareScreen() {
 
   const currentMeta = getTypeMeta(current.type, locale);
   const previousMeta = getTypeMeta(previous.type, locale);
-  const typeChanged = previous.type !== current.type;
   const labelPrevious = t('compare.axis_previous');
   const labelCurrent = t('compare.axis_current');
+
+  // ── 軸変化の解析 ─────────────────────────────────────────────────────────
+  const axes = ['EI', 'SN', 'TF', 'JP'] as const;
+  const changes = axes.map((axis) => {
+    const change = analyzeAxisChange(axis, previous.scores[axis], current.scores[axis]);
+    return { axis, ...change, absDiff: Math.abs(current.scores[axis] - previous.scores[axis]) };
+  });
+
+  // 同日判定（年月日一致 = 同日）
+  const sameDayText = isSameDay(previous.takenAt, current.takenAt)
+    ? getSameDayInterpretation(previous.type !== current.type).text
+    : null;
+
+  // 全軸 none / small のみ判定
+  const allNone = changes.every((c) => c.strength === 'none');
+  const nonNone = changes.filter((c) => c.strength !== 'none');
+  const hasOnlySmall = nonNone.length > 0 && nonNone.every((c) => c.strength === 'small');
+
+  // グループ間遷移判定
+  const prevGroup = TYPE_TO_GROUP[previous.type];
+  const currGroup = TYPE_TO_GROUP[current.type];
+  const groupTransition =
+    prevGroup !== currGroup ? findGroupTransition(prevGroup, currGroup) : null;
+
+  // 主軸・副軸選定（absDiff 降順ソート）
+  const sorted = [...changes].sort((a, b) => b.absDiff - a.absDiff);
+  const primaryAxis = sorted[0];
+  // グループ変化時は副軸省略。それ以外は absDiff >= 6 なら副軸を表示
+  const secondaryAxis =
+    groupTransition !== null || (sorted[1]?.absDiff ?? 0) < 6 ? null : sorted[1];
+
+  const showAxisTexts = !allNone && !hasOnlySmall;
+  const primaryText = showAxisTexts
+    ? (findAxisInterpretation(primaryAxis.axis, primaryAxis.direction, primaryAxis.strength)?.text ?? null)
+    : null;
+  const secondaryText =
+    showAxisTexts && secondaryAxis
+      ? (findAxisInterpretation(secondaryAxis.axis, secondaryAxis.direction, secondaryAxis.strength)?.text ?? null)
+      : null;
 
   return (
     <>
@@ -155,27 +200,36 @@ export function CompareScreen() {
             <p className="text-[11px] tracking-[0.32em] text-ink-mute text-center mb-6 uppercase">
               {t('compare.reading_label')}
             </p>
-            <div className="px-4 space-y-4">
-              {typeChanged ? (
-                <>
-                  <p className="font-serif text-xl text-ink leading-relaxed whitespace-pre-line">
-                    {t('compare.type_changed', { prev: previous.type, curr: current.type })}
-                  </p>
-                  <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
-                    {/* TODO Phase 3.1: 軸ごとの定型文を出し分け */}
-                    {t('compare.type_changed_subtext')}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="font-serif text-xl text-ink leading-relaxed whitespace-pre-line">
-                    {t('compare.type_unchanged', { type: current.type })}
-                  </p>
-                  <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
-                    {/* TODO Phase 3.1: 4軸内での微細な変化を解説 */}
-                    {t('compare.type_unchanged_subtext')}
-                  </p>
-                </>
+            <div className="px-4 space-y-6">
+              {sameDayText && (
+                <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
+                  {sameDayText}
+                </p>
+              )}
+              {allNone && (
+                <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
+                  {getMinimalChangeInterpretation('all_stable').text}
+                </p>
+              )}
+              {hasOnlySmall && (
+                <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
+                  {getMinimalChangeInterpretation('subtle_movement').text}
+                </p>
+              )}
+              {showAxisTexts && groupTransition && (
+                <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
+                  {groupTransition.text}
+                </p>
+              )}
+              {primaryText && (
+                <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
+                  {primaryText}
+                </p>
+              )}
+              {secondaryText && (
+                <p className="text-base text-ink-mute leading-[1.85] whitespace-pre-line">
+                  {secondaryText}
+                </p>
               )}
             </div>
           </section>
