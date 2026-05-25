@@ -1,340 +1,732 @@
-// Re-export Axis so CompareScreen can import types from a single location
-export type { Axis } from '@/features/diagnosis/logic/types';
-import type { Axis, MbtiType } from '@/features/diagnosis/logic/types';
-
-// ─── 型定義 ─────────────────────────────────────────────────────────────────
-
-export type ChangeStrength = 'none' | 'small' | 'medium' | 'large' | 'flip';
-
-export type AxisDirection =
-  | 'toward_E'
-  | 'toward_I'
-  | 'toward_N'
-  | 'toward_S'
-  | 'toward_F'
-  | 'toward_T'
-  | 'toward_P'
-  | 'toward_J';
-
-export type Group = 'NT' | 'NF' | 'SJ' | 'SP';
-
-export interface AxisChange {
-  direction: AxisDirection;
-  strength: ChangeStrength;
-}
-
-// ─── タイプ→グループ対応表 ───────────────────────────────────────────────────
-
-export const TYPE_TO_GROUP: Record<MbtiType, Group> = {
-  INTJ: 'NT', INTP: 'NT', ENTJ: 'NT', ENTP: 'NT',
-  INFJ: 'NF', INFP: 'NF', ENFJ: 'NF', ENFP: 'NF',
-  ISTJ: 'SJ', ISFJ: 'SJ', ESTJ: 'SJ', ESFJ: 'SJ',
-  ISTP: 'SP', ISFP: 'SP', ESTP: 'SP', ESFP: 'SP',
-};
-
-// ─── 軸変化の解析 ────────────────────────────────────────────────────────────
-
-function positiveDirectionOf(axis: Axis): AxisDirection {
-  switch (axis) {
-    case 'EI': return 'toward_E';
-    case 'SN': return 'toward_N';
-    case 'TF': return 'toward_F';
-    case 'JP': return 'toward_P';
-  }
-}
-
-function negativeDirectionOf(axis: Axis): AxisDirection {
-  switch (axis) {
-    case 'EI': return 'toward_I';
-    case 'SN': return 'toward_S';
-    case 'TF': return 'toward_T';
-    case 'JP': return 'toward_J';
-  }
-}
-
 /**
- * スコア差から変化方向と強度を返す。
+ * Phase 3.1: 比較ビュー定型文データ
  *
- * 強度しきい値:
- *   none  ≤ 5点差  — 診断誤差とみなす（指示書の「変化量5以下」定義に準拠）
- *   flip           — 符号逆転（MBTIの軸をまたいだ変化）
- *   small ≤ 20点差 — 微細な変化
- *   medium ≤ 50点差 — 中程度の変化
- *   large > 50点差  — 大きな変化
+ * 48パターンの定型文と判定ロジック。
+ * - 軸別変化文 32パターン（4軸 × 8）
+ * - グループ間遷移 12パターン
+ * - 同日比較 2パターン
+ * - 微小変化 2パターン
  */
-export function analyzeAxisChange(
-  axis: Axis,
-  previousScore: number,
-  currentScore: number,
-): AxisChange {
-  const diff = currentScore - previousScore;
-  const absDiff = Math.abs(diff);
-  const direction: AxisDirection =
-    diff >= 0 ? positiveDirectionOf(axis) : negativeDirectionOf(axis);
 
-  if (absDiff <= 5) return { direction, strength: 'none' };
+import type { MbtiType } from '@/features/diagnosis/logic/types';
 
-  // 符号逆転 = MBTI の軸をまたいだ（タイプ文字が変わった）場合のみ flip
-  const flipped =
-    (previousScore < 0 && currentScore > 0) ||
-    (previousScore > 0 && currentScore < 0);
-  if (flipped) return { direction, strength: 'flip' };
+// =============================================================
+// 型定義
+// =============================================================
 
-  if (absDiff <= 20) return { direction, strength: 'small' };
-  if (absDiff <= 50) return { direction, strength: 'medium' };
-  return { direction, strength: 'large' };
-}
+export type Axis = 'EI' | 'SN' | 'TF' | 'JP';
 
-// ─── 軸別変化テキスト（32パターン: 4軸 × 2方向 × 4強度） ──────────────────
+export type AxisStrength = 'none' | 'small' | 'medium' | 'flip';
 
-interface AxisInterpretationEntry {
+export type Direction =
+  | 'left_to_right'    // I→E, S→N, T→F, J→P
+  | 'right_to_left'    // E→I, N→S, F→T, P→J
+  | 'stable_left'      // I, S, T, J で変化なし
+  | 'stable_right';    // E, N, F, P で変化なし
+
+export type Group = 'analysts' | 'diplomats' | 'sentinels' | 'explorers';
+
+export interface AxisInterpretation {
   axis: Axis;
-  direction: AxisDirection;
-  strength: Exclude<ChangeStrength, 'none'>;
+  direction: Direction;
+  strength: AxisStrength;
   text: string;
 }
 
-const AXIS_INTERPRETATIONS: AxisInterpretationEntry[] = [
-  // ── EI 軸 ──────────────────────────────────────────────────────────────────
-  {
-    axis: 'EI', direction: 'toward_E', strength: 'small',
-    text: '外の世界への開き方が、少しだけ変化しています。\n人との接点に、以前より自然な流れが生まれてきているのかもしれません。',
-  },
-  {
-    axis: 'EI', direction: 'toward_E', strength: 'medium',
-    text: '外向きのエネルギーが増してきています。\n人や出来事の中に、自分を見出そうとする動きが見えます。',
-  },
-  {
-    axis: 'EI', direction: 'toward_E', strength: 'large',
-    text: 'Eの傾向が大きく前面に出てきています。\n環境や人との関わりが、あなたの新しい側面を引き出したのでしょう。',
-  },
-  {
-    axis: 'EI', direction: 'toward_E', strength: 'flip',
-    text: 'IからEへ、軸を越えました。\n内省型から外向型へ——環境の変化や、意識的な行動の変化が反映されているのかもしれません。',
-  },
-  {
-    axis: 'EI', direction: 'toward_I', strength: 'small',
-    text: '内向きへのわずかなシフトが見えます。\n自分のペースや、一人でいる時間を大切にする気持ちが出てきているようです。',
-  },
-  {
-    axis: 'EI', direction: 'toward_I', strength: 'medium',
-    text: '内省へのシフトが進んでいます。\n深く考えること、静かな時間が重要になってきた時期かもしれません。',
-  },
-  {
-    axis: 'EI', direction: 'toward_I', strength: 'large',
-    text: 'Iの傾向が大きく強まっています。\nエネルギーを内側に向け、何かを整理しようとしている時期にあるのかもしれません。',
-  },
-  {
-    axis: 'EI', direction: 'toward_I', strength: 'flip',
-    text: 'EからIへ、軸を越えました。\n外向型から内省型へ——社会的な接触量の変化や、生活リズムの見直しが影響している可能性があります。',
-  },
-
-  // ── SN 軸 ──────────────────────────────────────────────────────────────────
-  {
-    axis: 'SN', direction: 'toward_N', strength: 'small',
-    text: '具体から抽象へ、わずかな動きがあります。\nアイデアや可能性への感受性が、少し広がってきたようです。',
-  },
-  {
-    axis: 'SN', direction: 'toward_N', strength: 'medium',
-    text: '直感や可能性への感度が高まっています。\n全体像やパターンを捉えようとする力が伸びてきた時期です。',
-  },
-  {
-    axis: 'SN', direction: 'toward_N', strength: 'large',
-    text: 'Nの傾向が大きく強まっています。\n理論・象徴・抽象的な思考への関心が、以前より格段に広がっています。',
-  },
-  {
-    axis: 'SN', direction: 'toward_N', strength: 'flip',
-    text: 'SからNへ、軸を越えました。\n事実から可能性へ——物事の見方の基盤が変化している転換点かもしれません。',
-  },
-  {
-    axis: 'SN', direction: 'toward_S', strength: 'small',
-    text: '抽象から具体へ、わずかな動きがあります。\n現実の手触りや、足元の確かさを求めるようになってきたようです。',
-  },
-  {
-    axis: 'SN', direction: 'toward_S', strength: 'medium',
-    text: '具体的・現実的な視点が強まっています。\n今ここにある事実や、実用的な解決策に集中している時期かもしれません。',
-  },
-  {
-    axis: 'SN', direction: 'toward_S', strength: 'large',
-    text: 'Sの傾向が大きく強まっています。\n経験・感覚・現実に根ざした思考が前面に出てきています。',
-  },
-  {
-    axis: 'SN', direction: 'toward_S', strength: 'flip',
-    text: 'NからSへ、軸を越えました。\n可能性から現実へ——生活の中で、より実践的な視点が求められるようになった可能性があります。',
-  },
-
-  // ── TF 軸 ──────────────────────────────────────────────────────────────────
-  {
-    axis: 'TF', direction: 'toward_F', strength: 'small',
-    text: '論理より共感へ、わずかな傾きが見えます。\n人との関わりの中で、感情に寄り添う面が増えてきたようです。',
-  },
-  {
-    axis: 'TF', direction: 'toward_F', strength: 'medium',
-    text: '感情・価値観への感度が高まっています。\n人の気持ちや、関係性の温度感を大切にする傾向が出てきた時期です。',
-  },
-  {
-    axis: 'TF', direction: 'toward_F', strength: 'large',
-    text: 'Fの傾向が大きく強まっています。\n感情共鳴や対人的な温かみへの意識が、以前よりずっと前面に出てきています。',
-  },
-  {
-    axis: 'TF', direction: 'toward_F', strength: 'flip',
-    text: 'TからFへ、軸を越えました。\n論理中心から感情・関係重視へ——人間関係や感情的な体験が大きく影響した可能性があります。',
-  },
-  {
-    axis: 'TF', direction: 'toward_T', strength: 'small',
-    text: '共感より論理へ、わずかな傾きが見えます。\n感情よりも筋道を重んじる場面が増えてきたようです。',
-  },
-  {
-    axis: 'TF', direction: 'toward_T', strength: 'medium',
-    text: '論理的な判断軸が強まっています。\n感情より根拠や効率を基準に動こうとしている時期かもしれません。',
-  },
-  {
-    axis: 'TF', direction: 'toward_T', strength: 'large',
-    text: 'Tの傾向が大きく強まっています。\n客観的な分析や、論理的一貫性を重視する姿勢が前面に出てきています。',
-  },
-  {
-    axis: 'TF', direction: 'toward_T', strength: 'flip',
-    text: 'FからTへ、軸を越えました。\n感情・関係重視から論理中心へ——環境や責任範囲の変化が影響している可能性があります。',
-  },
-
-  // ── JP 軸 ──────────────────────────────────────────────────────────────────
-  {
-    axis: 'JP', direction: 'toward_P', strength: 'small',
-    text: '計画より柔軟さへ、わずかな動きがあります。\n決めすぎず、流れに沿って動く余裕が生まれてきたようです。',
-  },
-  {
-    axis: 'JP', direction: 'toward_P', strength: 'medium',
-    text: '自発性・適応性への傾きが見られます。\n固定したスケジュールより、その場の判断を好む感覚が出てきた時期です。',
-  },
-  {
-    axis: 'JP', direction: 'toward_P', strength: 'large',
-    text: 'Pの傾向が大きく強まっています。\n即興的で開かれたアプローチへの親和性が、以前よりずっと強まっています。',
-  },
-  {
-    axis: 'JP', direction: 'toward_P', strength: 'flip',
-    text: 'JからPへ、軸を越えました。\n計画型から柔軟型へ——生活スタイルや仕事の進め方が大きく変化した可能性があります。',
-  },
-  {
-    axis: 'JP', direction: 'toward_J', strength: 'small',
-    text: '柔軟さより構造へ、わずかな動きがあります。\n計画や見通しに安心感を覚えるようになってきたようです。',
-  },
-  {
-    axis: 'JP', direction: 'toward_J', strength: 'medium',
-    text: '計画性・秩序への傾きが出てきています。\n自分なりのペースや手順を重んじる意識が強まっている時期かもしれません。',
-  },
-  {
-    axis: 'JP', direction: 'toward_J', strength: 'large',
-    text: 'Jの傾向が大きく強まっています。\n明確な見通しと、コントロールできる環境への志向が前面に出てきています。',
-  },
-  {
-    axis: 'JP', direction: 'toward_J', strength: 'flip',
-    text: 'PからJへ、軸を越えました。\n柔軟型から計画型へ——環境の変化や、責任の増加が影響している可能性があります。',
-  },
-];
-
-export function findAxisInterpretation(
-  axis: Axis,
-  direction: AxisDirection,
-  strength: ChangeStrength,
-): { text: string } | null {
-  if (strength === 'none') return null;
-  const entry = AXIS_INTERPRETATIONS.find(
-    (e) => e.axis === axis && e.direction === direction && e.strength === strength,
-  );
-  return entry ? { text: entry.text } : null;
-}
-
-// ─── グループ間遷移テキスト（12パターン） ────────────────────────────────────
-
-interface GroupTransitionEntry {
+export interface GroupTransitionInterpretation {
   from: Group;
   to: Group;
   text: string;
 }
 
-const GROUP_TRANSITIONS: GroupTransitionEntry[] = [
+export interface SameDayInterpretation {
+  typeChanged: boolean;
+  text: string;
+}
+
+export interface MinimalChangeInterpretation {
+  variant: 'subtle_movement' | 'all_stable';
+  text: string;
+}
+
+// =============================================================
+// タイプ → グループのマッピング
+// =============================================================
+
+export const TYPE_TO_GROUP: Record<MbtiType, Group> = {
+  INTJ: 'analysts', INTP: 'analysts', ENTJ: 'analysts', ENTP: 'analysts',
+  INFJ: 'diplomats', INFP: 'diplomats', ENFJ: 'diplomats', ENFP: 'diplomats',
+  ISTJ: 'sentinels', ISFJ: 'sentinels', ESTJ: 'sentinels', ESFJ: 'sentinels',
+  ISTP: 'explorers', ISFP: 'explorers', ESTP: 'explorers', ESFP: 'explorers',
+};
+
+// =============================================================
+// 軸別変化文 32パターン
+// =============================================================
+
+export const AXIS_INTERPRETATIONS: AxisInterpretation[] = [
+  // ---- EI 軸 ----
   {
-    from: 'NT', to: 'NF',
-    text: '探究から共鳴へ。\n知的な鋭さを保ちながら、人との深いつながりや感情の機微に向かう変化が見えます。',
+    axis: 'EI', direction: 'left_to_right', strength: 'small',
+    text: `内向的だったあなたの中に、
+ほんの少し、外への動きが生まれている。
+
+大きく変わったわけではないけれど、
+人と過ごす時間に、わずかな心地よさを
+感じはじめているのかもしれません。`,
   },
   {
-    from: 'NT', to: 'SJ',
-    text: '理念から基盤へ。\n抽象的な思考の力を持ちながら、現実・秩序・継続性への重心が増してきたようです。',
+    axis: 'EI', direction: 'left_to_right', strength: 'medium',
+    text: `内向的だったあなたが、少しずつ心をひらいていく。
+
+ひとりの時間を大切にしてきたあなたが、
+最近は誰かと過ごす時間にも、
+じわりと馴染んでいるのかもしれません。
+
+外への扉が、ゆっくりと開きはじめています。`,
   },
   {
-    from: 'NT', to: 'SP',
-    text: '分析から行動へ。\n理論より実践、概念より即応——より感覚的で軽やかな動き方に向かっています。',
+    axis: 'EI', direction: 'left_to_right', strength: 'flip',
+    text: `内向的だったあなたが、外へと開いていく。
+
+ひとりで詩を編んでいた時間から、
+場の真ん中で踊る時間へ、
+軸が大きく移ろうとしているようです。
+
+最近、誰かと過ごすことが、
+むしろ自分を満たすことになっていませんか?`,
   },
   {
-    from: 'NF', to: 'NT',
-    text: '共鳴から探究へ。\n感情・関係の世界から、より客観的で概念的な思考の軸へと移動しています。',
+    axis: 'EI', direction: 'right_to_left', strength: 'small',
+    text: `外向的なあなたの中に、
+静けさを求める気持ちが芽生えている。
+
+人といる時間は変わらず好きでも、
+ひとりで過ごす時間が、
+少しずつ意味を持ちはじめているようです。`,
   },
   {
-    from: 'NF', to: 'SJ',
-    text: '理想から現実へ。\n深い共感の力を持ちながら、より地に足のついた、安定と継続を重んじる姿勢が出てきています。',
+    axis: 'EI', direction: 'right_to_left', strength: 'medium',
+    text: `外向的だったあなたが、少しずつ内へと向かう。
+
+人の中にいる時間も大切にしながら、
+自分の内側に耳を澄ませる時間が、
+ゆっくりと増えているようです。
+
+外と内の、ちょうど真ん中あたり。
+そこに、今のあなたが立っています。`,
   },
   {
-    from: 'NF', to: 'SP',
-    text: '感情から感覚へ。\n内的な世界から、身体・瞬間・体験の世界へ向かう変化が見えます。',
+    axis: 'EI', direction: 'right_to_left', strength: 'flip',
+    text: `外へ開いていたあなたが、内へと向かう。
+
+人の輪の真ん中にいた時期から、
+ひとり静かに過ごす時間へと、
+重心が深く沈んでいるようです。
+
+誰かと一緒にいる時より、
+ひとりでいる時のほうが、
+今のあなたには馴染むのかもしれません。`,
   },
   {
-    from: 'SJ', to: 'NT',
-    text: '基盤から探究へ。\n着実さの土台を持ちながら、より抽象的で概念的な思考の世界へ広がっています。',
+    axis: 'EI', direction: 'stable_left', strength: 'none',
+    text: `あなたは引き続き、内向的なあなたのまま。
+
+外の喧騒から少し離れたところで、
+自分の世界を深めていく時間を、
+変わらず大切にしているようです。
+
+揺らぎながらも保たれている軸。
+それはあなたの核のひとつです。`,
   },
   {
-    from: 'SJ', to: 'NF',
-    text: '秩序から共鳴へ。\n現実的な安定性を持ちながら、感情・価値観・対人的なつながりへの感度が高まっています。',
+    axis: 'EI', direction: 'stable_right', strength: 'none',
+    text: `あなたは引き続き、外向的なあなたのまま。
+
+人と関わり、場に開かれる時間が、
+今もあなたを満たしているようです。
+
+細かな波はあっても、
+心が外へ向かう力は変わっていません。`,
+  },
+
+  // ---- SN 軸 ----
+  {
+    axis: 'SN', direction: 'left_to_right', strength: 'small',
+    text: `現実を見つめるあなたの中に、
+直感が顔を出しはじめている。
+
+目の前の事実を大切にしながらも、
+その奥にある何かを感じ取ろうとする
+小さな動きが生まれています。`,
   },
   {
-    from: 'SJ', to: 'SP',
-    text: '計画から即応へ。\n構造と秩序から離れ、より自発的で感覚的な動き方に変化しています。',
+    axis: 'SN', direction: 'left_to_right', strength: 'medium',
+    text: `現実的だったあなたが、少しずつ直感に耳を傾けはじめる。
+
+足元の確かさを大切にしてきたあなたが、
+最近は言葉にならない予感や、
+ふと浮かぶイメージを、
+信じてみようとしているようです。`,
   },
   {
-    from: 'SP', to: 'NT',
-    text: '感覚から探究へ。\n即興と体験の世界から、より概念的・分析的な方向へのシフトが見えます。',
+    axis: 'SN', direction: 'left_to_right', strength: 'flip',
+    text: `現実を見つめていたあなたが、直感の世界へと開かれていく。
+
+確かな手触りを頼りに歩んできた日々から、
+まだ見えないものを信じる日々へ、
+視線が遠くへと伸びているようです。
+
+「なんとなく、そう感じる」という感覚が、
+今のあなたを動かしはじめています。`,
   },
   {
-    from: 'SP', to: 'NF',
-    text: '行動から共鳴へ。\n感覚的な世界から、感情や関係性の奥行きへ向かう変化が見えます。',
+    axis: 'SN', direction: 'right_to_left', strength: 'small',
+    text: `直感的なあなたの中に、
+現実を確かめる視点が育っている。
+
+ひらめきを大切にしながらも、
+目の前のことを丁寧に見つめる時間が、
+少しずつ増えているようです。`,
   },
   {
-    from: 'SP', to: 'SJ',
-    text: '即応から基盤へ。\n自由な流れから、より計画的で安定した構造を求める方向への変化です。',
+    axis: 'SN', direction: 'right_to_left', strength: 'medium',
+    text: `直感的だったあなたが、少しずつ現実に足をつける。
+
+遠くを見つめる時間も大切にしながら、
+今この瞬間の手触りや、
+具体的な事実に意識が向かいはじめています。`,
+  },
+  {
+    axis: 'SN', direction: 'right_to_left', strength: 'flip',
+    text: `直感を信じていたあなたが、現実へと深く根を下ろす。
+
+ひらめきと予感の中を漂っていた時期から、
+目の前の確かなものに向き合う時期へ、
+重心が深く沈んでいるようです。
+
+「今、ここにあるもの」を丁寧に
+受け取ろうとする姿勢が、
+あなたの中に生まれているのかもしれません。`,
+  },
+  {
+    axis: 'SN', direction: 'stable_left', strength: 'none',
+    text: `あなたは引き続き、現実的なあなたのまま。
+
+目の前の確かなものを大切にし、
+足元を一歩ずつ確かめながら歩む姿勢が、
+今もあなたを支えています。
+
+揺らぎながらも保たれている視点。
+それはあなたの核のひとつです。`,
+  },
+  {
+    axis: 'SN', direction: 'stable_right', strength: 'none',
+    text: `あなたは引き続き、直感的なあなたのまま。
+
+まだ言葉にならない予感や、
+全体を一目で捉える感覚が、
+今もあなたの道しるべになっているようです。
+
+世界の奥にあるものを見ようとする力は、
+変わらず保たれています。`,
+  },
+
+  // ---- TF 軸 ----
+  {
+    axis: 'TF', direction: 'left_to_right', strength: 'small',
+    text: `論理を頼りにしてきたあなたの中に、
+感性の声が聞こえはじめている。
+
+筋道を立てて考える姿勢を保ちながらも、
+「なんとなく、こちらが正しい気がする」という
+小さな感覚が、判断に加わりつつあります。`,
+  },
+  {
+    axis: 'TF', direction: 'left_to_right', strength: 'medium',
+    text: `論理的だったあなたが、少しずつ感性に耳を傾けはじめる。
+
+理屈で物事を決めてきたあなたが、
+最近は自分の気持ちや、
+相手の心の動きを、
+判断の中に置こうとしているようです。`,
+  },
+  {
+    axis: 'TF', direction: 'left_to_right', strength: 'flip',
+    text: `理屈で決めていたあなたが、感性に任せる世界へと移っていく。
+
+論理の筋道を頼りに歩んできた日々から、
+気持ちの響きを信じる日々へ、
+判断の重心が大きく動いているようです。
+
+「正しいかどうか」より、
+「心が動くかどうか」が、
+今のあなたを導きはじめています。`,
+  },
+  {
+    axis: 'TF', direction: 'right_to_left', strength: 'small',
+    text: `感性に任せてきたあなたの中に、
+理屈で確かめる視点が育っている。
+
+気持ちの響きを大切にしながらも、
+筋道を立てて考える時間が、
+少しずつ増えているようです。`,
+  },
+  {
+    axis: 'TF', direction: 'right_to_left', strength: 'medium',
+    text: `感性に任せてきたあなたが、少しずつ論理に重心を移す。
+
+心の響きを大切にしながらも、
+冷静に物事を見つめる視線が、
+判断の中で力を増しているようです。`,
+  },
+  {
+    axis: 'TF', direction: 'right_to_left', strength: 'flip',
+    text: `感性に任せていたあなたが、論理の世界へと深く入っていく。
+
+気持ちの流れに沿って動いていた時期から、
+理屈で物事を整える時期へ、
+判断の軸が大きく動いているようです。
+
+「心がどう動くか」より、
+「筋が通っているか」を、
+今のあなたは大切にしはじめています。`,
+  },
+  {
+    axis: 'TF', direction: 'stable_left', strength: 'none',
+    text: `あなたは引き続き、論理的なあなたのまま。
+
+筋道を立てて物事を見つめ、
+冷静に判断を下す姿勢が、
+今もあなたを支えています。
+
+揺らぎながらも保たれている重心。
+それはあなたの核のひとつです。`,
+  },
+  {
+    axis: 'TF', direction: 'stable_right', strength: 'none',
+    text: `あなたは引き続き、感性に任せるあなたのまま。
+
+心の響きや気持ちの流れを大切にし、
+人と人のあいだに生まれるものを
+丁寧に感じ取る力が、
+今もあなたを動かしているようです。
+
+揺らぎながらも保たれている響き。
+それはあなたの核のひとつです。`,
+  },
+
+  // ---- JP 軸 ----
+  {
+    axis: 'JP', direction: 'left_to_right', strength: 'small',
+    text: `計画を立ててきたあなたの中に、
+柔らかさが芽生えはじめている。
+
+決めた道筋を大切にしながらも、
+予定にない流れを受け入れる余地が、
+少しずつ生まれているようです。`,
+  },
+  {
+    axis: 'JP', direction: 'left_to_right', strength: 'medium',
+    text: `計画的だったあなたが、少しずつ流れに身を任せはじめる。
+
+道筋を立てて進む安心感も大切にしながら、
+その場で起きることに合わせて動く軽やかさが、
+あなたの中で育っているようです。`,
+  },
+  {
+    axis: 'JP', direction: 'left_to_right', strength: 'flip',
+    text: `道筋を立ててきたあなたが、臨機応変な世界へと開かれていく。
+
+決められた予定通りに歩んできた日々から、
+その瞬間の流れに合わせて動く日々へ、
+重心が大きく動いているようです。
+
+「決めた通りに進めること」より、
+「その時々に応じること」が、
+今のあなたを軽やかにしはじめています。`,
+  },
+  {
+    axis: 'JP', direction: 'right_to_left', strength: 'small',
+    text: `臨機応変なあなたの中に、
+道筋を整える視点が育っている。
+
+流れに身を任せる軽やかさを保ちながらも、
+予定を立てて動く時間が、
+少しずつ増えているようです。`,
+  },
+  {
+    axis: 'JP', direction: 'right_to_left', strength: 'medium',
+    text: `臨機応変だったあなたが、少しずつ計画に重心を移す。
+
+その場の流れを大切にしながらも、
+あらかじめ道筋を立てる落ち着きが、
+あなたの中で力を増しているようです。`,
+  },
+  {
+    axis: 'JP', direction: 'right_to_left', strength: 'flip',
+    text: `臨機応変だったあなたが、道筋を立てる世界へと深く入っていく。
+
+その瞬間の流れに乗っていた時期から、
+予定と計画で物事を整える時期へ、
+重心が大きく動いているようです。
+
+「流れに任せること」より、
+「自分で道を引くこと」を、
+今のあなたは大切にしはじめています。`,
+  },
+  {
+    axis: 'JP', direction: 'stable_left', strength: 'none',
+    text: `あなたは引き続き、計画的なあなたのまま。
+
+道筋を立てて物事を進め、
+予定通りに歩む安定感が、
+今もあなたを支えています。
+
+揺らぎながらも保たれている道。
+それはあなたの核のひとつです。`,
+  },
+  {
+    axis: 'JP', direction: 'stable_right', strength: 'none',
+    text: `あなたは引き続き、臨機応変なあなたのまま。
+
+その時々の流れを読み、
+柔らかく動く軽やかさが、
+今もあなたを支えています。
+
+揺らぎながらも保たれている軽やかさ。
+それはあなたの核のひとつです。`,
   },
 ];
 
+// =============================================================
+// グループ間遷移文 12パターン
+// =============================================================
+
+export const GROUP_TRANSITION_INTERPRETATIONS: GroupTransitionInterpretation[] = [
+  // ---- Analysts → others ----
+  {
+    from: 'analysts', to: 'diplomats',
+    text: `光の探究者から、光を編む人へ。
+
+論理で世界を解き明かそうとしていたあなたが、
+人と人のあいだに流れるものに、
+心を向けはじめているようです。
+
+「正しさ」を追っていた視線が、
+「美しさ」や「人の想い」へと
+ゆっくりと移っていく。
+
+そんな変化が、あなたの中で
+静かに進んでいます。`,
+  },
+  {
+    from: 'analysts', to: 'sentinels',
+    text: `光の探究者から、光の番人へ。
+
+未来を描いていたあなたが、
+今、目の前にある秩序や責任に、
+重心を移しはじめているようです。
+
+新しい仕組みを考えるより、
+すでにあるものを丁寧に守り、
+育てていくこと。
+
+そこに、今のあなたの
+誠実さが向かっています。`,
+  },
+  {
+    from: 'analysts', to: 'explorers',
+    text: `光の探究者から、光の踊り手へ。
+
+頭の中で組み立てていた構想を、
+今、あなたは身体と感覚で
+試しはじめているようです。
+
+考え抜くより、まず動いてみる。
+理屈で組むより、その場で感じる。
+
+そんな軽やかな姿勢が、
+あなたの中で生まれています。`,
+  },
+
+  // ---- Diplomats → others ----
+  {
+    from: 'diplomats', to: 'analysts',
+    text: `光を編む人から、光の探究者へ。
+
+人の想いに寄り添ってきたあなたが、
+今、少し距離を取って、
+物事の構造を見つめはじめているようです。
+
+「どう感じるか」を大切にしながらも、
+「どう成り立っているか」を
+冷静に解き明かそうとする視線が、
+あなたの中に育っています。`,
+  },
+  {
+    from: 'diplomats', to: 'sentinels',
+    text: `光を編む人から、光の番人へ。
+
+人の理想や可能性を見つめてきたあなたが、
+今、地に足のついた現実を
+大切にしはじめているようです。
+
+夢を語ることから、
+日々を整えること、
+誰かを支えることへと、
+重心が移っているのかもしれません。`,
+  },
+  {
+    from: 'diplomats', to: 'explorers',
+    text: `光を編む人から、光の踊り手へ。
+
+繊細な感性で世界の美しさを集めていたあなたが、
+今、その美しさを場に放つ側へと
+立ち位置を変えはじめているようです。
+
+ひとり静かに紡いでいた詩が、
+誰かと共有する歌になり、
+踊りになっていく。
+
+そんな変化が、あなたの中で
+静かに、しかし確かに起きています。`,
+  },
+
+  // ---- Sentinels → others ----
+  {
+    from: 'sentinels', to: 'analysts',
+    text: `光の番人から、光の探究者へ。
+
+秩序を守ってきたあなたが、
+今、その秩序そのものを問い直し、
+新しい構造を描こうとしているようです。
+
+「こうあるべき」を受け継ぐより、
+「なぜそうなのか」を考え抜く視点が、
+あなたの中で力を増しています。`,
+  },
+  {
+    from: 'sentinels', to: 'diplomats',
+    text: `光の番人から、光を編む人へ。
+
+役割と責任を全うしてきたあなたが、
+今、その向こうにある
+人の心の動きに、
+目を向けはじめているようです。
+
+整えること、守ることを大切にしながらも、
+誰かの想いに寄り添う時間が、
+あなたの中で意味を増しています。`,
+  },
+  {
+    from: 'sentinels', to: 'explorers',
+    text: `光の番人から、光の踊り手へ。
+
+秩序を守ってきたあなたが、
+今、決められた枠の外へと
+足を踏み出しはじめているようです。
+
+予定通りに進めることから、
+その瞬間の感覚に従うことへ、
+重心が動いているのかもしれません。
+
+少し肩の力が抜けた、
+新しいあなたが顔を出しています。`,
+  },
+
+  // ---- Explorers → others ----
+  {
+    from: 'explorers', to: 'analysts',
+    text: `光の踊り手から、光の探究者へ。
+
+その場の感覚で動いてきたあなたが、
+今、立ち止まって考え、
+構造を読み解こうとしているようです。
+
+身体で覚えていたことを、
+言葉と論理で整理しなおす時間が、
+あなたの中で始まっています。`,
+  },
+  {
+    from: 'explorers', to: 'diplomats',
+    text: `光の踊り手から、光を編む人へ。
+
+今この瞬間を生きてきたあなたが、
+今、誰かの心の動きや、
+人と人のあいだに流れるものに、
+深く意識を向けはじめているようです。
+
+軽やかな感性はそのままに、
+その感性を誰かのために
+使おうとしているのかもしれません。`,
+  },
+  {
+    from: 'explorers', to: 'sentinels',
+    text: `光の踊り手から、光の番人へ。
+
+その場の流れに乗ってきたあなたが、
+今、自分の足元を整え、
+誰かを支える側へと
+立ち位置を変えはじめているようです。
+
+軽やかに動くことから、
+確かに守ること、
+継続することへと、
+重心が移っているのかもしれません。`,
+  },
+];
+
+// =============================================================
+// 同日比較 2パターン
+// =============================================================
+
+export const SAME_DAY_INTERPRETATIONS: SameDayInterpretation[] = [
+  {
+    typeChanged: true,
+    text: `同じ日の中で、すでに2つのあなたが現れています。
+気分や状況によって、別の側面が立ちあらわれることは、
+誰にでも起こりうることです。`,
+  },
+  {
+    typeChanged: false,
+    text: `同じ日に2度、あなたは同じ場所に立ち戻りました。
+それは、今日のあなたが
+ぶれずに自分の中心にあることの証なのかもしれません。`,
+  },
+];
+
+// =============================================================
+// 微小変化 2パターン
+// =============================================================
+
+export const MINIMAL_CHANGE_INTERPRETATIONS: MinimalChangeInterpretation[] = [
+  {
+    variant: 'subtle_movement',
+    text: `あなたの中で、何かが動こうとしているのかもしれません。
+
+数字としては大きな変化ではありませんが、
+今のあなたは、いつものあなたの中で
+わずかに揺らいでいるようです。
+
+その揺らぎは、変化の前触れかもしれませんし、
+いつもの自分を保つための
+小さな調整なのかもしれません。`,
+  },
+  {
+    variant: 'all_stable',
+    text: `あなたの中の4つの軸は、ほとんど変わっていません。
+
+このReadingは、前回のあなたをそのまま映しています。
+それは、あなたの輪郭が
+今、安定していることの表れです。
+
+揺らぎながらも、ぶれない核。
+それが今日のあなたを支えています。`,
+  },
+];
+
+// =============================================================
+// 強度判定ロジック
+// =============================================================
+
+/**
+ * 2つのスコアから変化の方向と強度を判定する。
+ *
+ * 判定優先順位:
+ * 1. 変化量の絶対値が 5 以下 → none（揺らぎの範囲）
+ * 2. 符号反転（previous と current の符号が逆）→ flip
+ * 3. 変化量 51 以上 → flip（軸別文ではlargeとflipを統合）
+ * 4. 変化量 21〜50 → medium
+ * 5. 変化量 6〜20 → small
+ */
+export function analyzeAxisChange(
+  _axis: Axis, // 軸名はシグネチャの一貫性のため残す（Direction は軸非依存）
+  previousScore: number,
+  currentScore: number,
+): { direction: Direction; strength: AxisStrength } {
+  const diff = currentScore - previousScore;
+  const absDiff = Math.abs(diff);
+
+  // 1. 揺らぎの範囲（変化なし）
+  if (absDiff <= 5) {
+    // 現在の符号で stable_left / stable_right を決定
+    return {
+      direction: currentScore < 0 ? 'stable_left' : 'stable_right',
+      strength: 'none',
+    };
+  }
+
+  // 移動方向
+  const direction: Direction = diff > 0 ? 'left_to_right' : 'right_to_left';
+
+  // 2. 符号反転（flip）— 両方とも絶対値 6 以上のとき
+  const flipped =
+    previousScore < 0 && currentScore > 0 ||
+    previousScore > 0 && currentScore < 0;
+  if (flipped && Math.abs(previousScore) >= 6 && Math.abs(currentScore) >= 6) {
+    return { direction, strength: 'flip' };
+  }
+
+  // 3. 大きな変化（flipと統合）
+  if (absDiff >= 51) {
+    return { direction, strength: 'flip' };
+  }
+
+  // 4. 中程度
+  if (absDiff >= 21) {
+    return { direction, strength: 'medium' };
+  }
+
+  // 5. 小さな変化
+  return { direction, strength: 'small' };
+}
+
+/**
+ * 軸別文を検索する。該当パターンがなければ null。
+ */
+export function findAxisInterpretation(
+  axis: Axis,
+  direction: Direction,
+  strength: AxisStrength,
+): AxisInterpretation | null {
+  return (
+    AXIS_INTERPRETATIONS.find(
+      (item) =>
+        item.axis === axis &&
+        item.direction === direction &&
+        item.strength === strength,
+    ) ?? null
+  );
+}
+
+/**
+ * グループ間遷移文を検索する。
+ */
 export function findGroupTransition(
   from: Group,
   to: Group,
-): { text: string } | null {
-  const entry = GROUP_TRANSITIONS.find((e) => e.from === from && e.to === to);
-  return entry ? { text: entry.text } : null;
+): GroupTransitionInterpretation | null {
+  if (from === to) return null;
+  return (
+    GROUP_TRANSITION_INTERPRETATIONS.find(
+      (item) => item.from === from && item.to === to,
+    ) ?? null
+  );
 }
 
-// ─── 同日比較テキスト（2パターン） ──────────────────────────────────────────
-
-export function getSameDayInterpretation(typeChanged: boolean): { text: string } {
-  if (typeChanged) {
-    return {
-      text: '同じ日に、二つのあなたが現れました。\n時間帯や状況によって、異なる側面が前に出てきていたのかもしれません。',
-    };
-  }
-  return {
-    text: '同じ日に二度、同じ自分と出会いました。\n診断の間、あなたの中心にある傾向は揺るがなかったようです。',
-  };
+/**
+ * 同日比較文を取得する。
+ */
+export function getSameDayInterpretation(typeChanged: boolean): SameDayInterpretation {
+  return SAME_DAY_INTERPRETATIONS.find((item) => item.typeChanged === typeChanged)!;
 }
 
-// ─── 微小変化テキスト（2パターン） ──────────────────────────────────────────
-
+/**
+ * 微小変化文を取得する。
+ */
 export function getMinimalChangeInterpretation(
-  kind: 'all_stable' | 'subtle_movement',
-): { text: string } {
-  if (kind === 'all_stable') {
-    return {
-      text: '4軸すべてで変化はほぼ見られません。\n今、あなたの傾向は非常に安定した状態にあります。',
-    };
-  }
-  return {
-    text: 'わずかな動きがあります。\n診断の誤差範囲に収まる変化ですが、何かがゆっくりと動き始めているサインかもしれません。',
-  };
+  variant: 'subtle_movement' | 'all_stable',
+): MinimalChangeInterpretation {
+  return MINIMAL_CHANGE_INTERPRETATIONS.find((item) => item.variant === variant)!;
 }
