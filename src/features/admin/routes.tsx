@@ -8,6 +8,7 @@ import { UiStringsList } from './lists/UiStringsList';
 import { TypeEditor } from './types/TypeEditor';
 import { QuestionEditor } from './questions/QuestionEditor';
 import { UiStringsEditor } from './ui-strings/UiStringsEditor';
+import { QuestionsPreviewAll } from './preview/QuestionsPreviewAll';
 import type { MbtiType } from './shared/source-types';
 
 export function AdminRoutes() {
@@ -15,6 +16,11 @@ export function AdminRoutes() {
     <Routes>
       {/* ログイン画面はガードの外側 */}
       <Route path="login" element={<AdminLogin />} />
+
+      {/* 開発時のみ: 認証不要のプレビュー画面。本番ビルドには含まれない */}
+      {import.meta.env.DEV && (
+        <Route path="preview/questions" element={<QuestionsPreviewAll />} />
+      )}
 
       {/* それ以外は AdminGate 配下 */}
       <Route path="*" element={<GuardedRoutes />} />
@@ -26,6 +32,7 @@ function GuardedRoutes() {
   return (
     <AdminGate>
       <Routes>
+        {/* 通常の管理画面: AdminShell（サイドバー + max-width）配下 */}
         <Route element={<AdminShell />}>
           <Route index element={<TypeListPage />} />
           <Route path="types" element={<TypeListPage />} />

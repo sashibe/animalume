@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Users, HelpCircle, Type, LogOut } from 'lucide-react';
+import { Users, HelpCircle, Type, LogOut, Smartphone } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
@@ -9,6 +9,10 @@ const ITEMS = [
   { to: '/admin/types',      label: 'タイプ説明', icon: Users },
   { to: '/admin/questions',  label: '問題',       icon: HelpCircle },
   { to: '/admin/ui-strings', label: 'UI文言',     icon: Type },
+];
+
+const PREVIEW_ITEMS = [
+  { to: '/admin/preview/questions', label: '全問プレビュー', icon: Smartphone },
 ];
 
 export function AdminSidebar() {
@@ -30,6 +34,28 @@ export function AdminSidebar() {
           </div>
         </div>
         {ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition',
+                isActive
+                  ? 'bg-stone-900 text-white'
+                  : 'text-stone-600 hover:bg-stone-100',
+              )
+            }
+          >
+            <item.icon className="h-4 w-4" />
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+
+        <div className="border-t border-stone-200 my-2" />
+        <p className="px-3 text-[10px] uppercase tracking-wider text-stone-400 mb-1">
+          プレビュー
+        </p>
+        {PREVIEW_ITEMS.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

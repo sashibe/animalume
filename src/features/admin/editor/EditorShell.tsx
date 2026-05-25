@@ -54,13 +54,13 @@ export function EditorShell({
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         {preview ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start">
             <div className="space-y-6 min-w-0">{children}</div>
-            <aside className="space-y-2">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500">
+            <aside className="space-y-2 lg:sticky lg:top-[4.5rem] lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500 px-1">
                 プレビュー
               </h2>
-              <div className="sticky top-20">{preview}</div>
+              {preview}
             </aside>
           </div>
         ) : (

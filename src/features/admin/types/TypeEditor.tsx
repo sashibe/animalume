@@ -135,8 +135,8 @@ export function TypeEditor({ typeCode, onBack }: Props) {
             value={currentMeta.essence}
             onChange={(essence) => updateCurrent({ essence })}
             lang={lang}
-            kind="typeHeading"
-            hint="タイプの本質を 1 文で要約"
+            kind="typeEssence"
+            hint="タイプの本質を 1 文で要約（40文字程度）"
           />
         </div>
       </section>

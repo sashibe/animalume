@@ -190,6 +190,9 @@ export function QuestionEditor({ questionId, onBack }: Props) {
               }
               lang={lang}
               kind="answerCard"
+              multiline
+              rows={3}
+              hint="改行は \n（Enter）で表現。プレビューで実機の見え方を確認できます。"
             />
             <WeightSelector
               value={currentQuestion.optionA.weight}
@@ -216,6 +219,9 @@ export function QuestionEditor({ questionId, onBack }: Props) {
               }
               lang={lang}
               kind="answerCard"
+              multiline
+              rows={3}
+              hint="改行は \n（Enter）で表現。プレビューで実機の見え方を確認できます。"
             />
             <WeightSelector
               value={currentQuestion.optionB.weight}

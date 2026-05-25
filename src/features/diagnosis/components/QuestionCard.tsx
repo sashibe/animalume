@@ -9,6 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, MousePointerClick, Sparkle } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { SmartText } from '@/components/SmartText';
 import type { Question } from '@/data/questions/types';
 import type { Axis } from '@/features/diagnosis/logic/types';
 
@@ -200,8 +201,8 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
             <div className="absolute top-0 right-0 pointer-events-none">
               <AxisMark axis={question.axis} />
             </div>
-            <p className="font-serif text-xl text-ink leading-relaxed mb-8 min-h-[5rem] whitespace-pre-line question-bracket text-center">
-              {question.content}
+            <p className="font-serif text-xl text-ink leading-relaxed mb-8 min-h-[5rem] question-bracket text-center">
+              <SmartText text={question.content} lang={question.locale} />
             </p>
 
             {/* Options: A (left / swipe left) | B (right / swipe right) */}
@@ -222,7 +223,9 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
                   className="absolute inset-0 rounded-xl border border-accent-rose pointer-events-none"
                   style={{ opacity: aHighlight }}
                 />
-                <span className="leading-relaxed flex-1 whitespace-pre-line text-left">{question.optionA.text}</span>
+                <span className="leading-relaxed flex-1 text-left">
+                  <SmartText text={question.optionA.text} lang={question.locale} />
+                </span>
                 <ArrowLeft className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
               </button>
 
@@ -242,7 +245,9 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
                   className="absolute inset-0 rounded-xl border border-accent-sage pointer-events-none"
                   style={{ opacity: bHighlight }}
                 />
-                <span className="leading-relaxed flex-1 whitespace-pre-line text-right">{question.optionB.text}</span>
+                <span className="leading-relaxed flex-1 text-right">
+                  <SmartText text={question.optionB.text} lang={question.locale} />
+                </span>
                 <ArrowRight className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
               </button>
             </div>

@@ -51,7 +51,32 @@ export function adminFs(): Plugin {
         return normalized;
       }
 
-      // localhost からのリクエストかチェック
+      /**
+       * ホスト名が「ローカルアクセス可能」かを判定する。
+       * - localhost, 127.0.0.1, [::1]: 同一マシン
+       * - 192.168.x.x, 10.x.x.x, 172.16.x.x〜172.31.x.x: プライベート IP (RFC 1918)
+       * グローバル IP は許可しない。
+       */
+      function isLocalHostname(hostName: string): boolean {
+        const cleaned = hostName.replace(/^\[|\]$/g, '');
+
+        if (cleaned === 'localhost' || cleaned === '127.0.0.1' || cleaned === '::1') {
+          return true;
+        }
+
+        if (/^10\.\d+\.\d+\.\d+$/.test(cleaned)) return true;
+
+        const m172 = cleaned.match(/^172\.(\d+)\.\d+\.\d+$/);
+        if (m172) {
+          const second = parseInt(m172[1], 10);
+          if (second >= 16 && second <= 31) return true;
+        }
+
+        if (/^192\.168\.\d+\.\d+$/.test(cleaned)) return true;
+
+        return false;
+      }
+
       function isLocalRequest(req: { headers: Record<string, string | string[] | undefined> }): boolean {
         const host = req.headers.host;
         const origin = req.headers.origin;
@@ -61,15 +86,13 @@ export function adminFs(): Plugin {
 
         if (!hostStr) return false;
         const hostName = hostStr.split(':')[0];
-        if (!['localhost', '127.0.0.1', '[::1]'].includes(hostName)) return false;
+        if (!isLocalHostname(hostName)) return false;
 
-        // Origin が指定されている場合（CORS 経由）はそれも localhost であることを要求
+        // Origin が指定されている場合（CORS 経由）もローカル判定を要求
         if (originStr) {
           try {
             const originUrl = new URL(originStr);
-            if (
-              !['localhost', '127.0.0.1', '[::1]'].includes(originUrl.hostname)
-            ) {
+            if (!isLocalHostname(originUrl.hostname)) {
               return false;
             }
           } catch {

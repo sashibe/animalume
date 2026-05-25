@@ -2,8 +2,7 @@ import { useId } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { validateText, countChars } from '../shared/validate';
-import { getLimit } from '../shared/limits';
+import { validateText } from '../shared/validate';
 import type { Locale, Localized } from '../shared/types';
 import type { LimitKind } from '../shared/limits';
 
@@ -33,15 +32,9 @@ export function LocalizedField({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const next = e.target.value;
-    const { max, hard } = getLimit(kind, lang);
-
-    if (hard && countChars(next) > max) {
-      const trimmed = [...next].slice(0, max).join('');
-      onChange({ ...value, [lang]: trimmed });
-      return;
-    }
-    onChange({ ...value, [lang]: next });
+    // 上限超過は文字数カウンタ（warn/over 表示）で警告するのみ。
+    // 強制切り詰めは複数行入力でカーソル位置と無関係な文字が消えるバグを引き起こすため削除。
+    onChange({ ...value, [lang]: e.target.value });
   };
 
   const inputCls = cn(

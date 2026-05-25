@@ -1,6 +1,13 @@
 import { SmartText } from '../shared/SmartText';
+import { classifyAnswerLine } from '../shared/limits';
+import type { AnswerSeverity } from '../shared/limits';
 import type { Locale } from '../shared/types';
 import type { SourceQuestion } from '../shared/source-types';
+
+function maxLineLength(text: string): number {
+  if (!text) return 0;
+  return Math.max(...text.split('\n').map((line) => line.length));
+}
 
 type Props = {
   question: SourceQuestion;
@@ -45,8 +52,8 @@ export function QuestionPreview({ question, lang, index = 1, total = 40 }: Props
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <OptionCard text={a} lang={lang} dir="left" />
-              <OptionCard text={b} lang={lang} dir="right" />
+              <OptionCard text={a} lang={lang} dir="left" severity={classifyAnswerLine(maxLineLength(a), lang)} />
+              <OptionCard text={b} lang={lang} dir="right" severity={classifyAnswerLine(maxLineLength(b), lang)} />
             </div>
           </div>
         </div>
@@ -55,17 +62,34 @@ export function QuestionPreview({ question, lang, index = 1, total = 40 }: Props
   );
 }
 
-function OptionCard({ text, lang, dir }: { text: string; lang: Locale; dir: 'left' | 'right' }) {
+function OptionCard({
+  text, lang, dir, severity,
+}: {
+  text: string;
+  lang: Locale;
+  dir: 'left' | 'right';
+  severity: AnswerSeverity;
+}) {
+  const alignClass = dir === 'left' ? 'text-left' : 'text-right';
+  const borderClass =
+    severity === 'ng'   ? 'border-red-300' :
+    severity === 'warn' ? 'border-amber-300' :
+    'border-stone-200/70';
   return (
-    <div className="rounded-xl border border-stone-200/70 bg-white/60 px-3.5 py-4 min-h-[120px] flex flex-col justify-between">
-      <div className="text-[14px] leading-[1.6] text-stone-700">
+    <div
+      className={
+        'rounded-xl border bg-white/60 px-3.5 py-4 min-h-[120px] flex flex-col justify-between ' +
+        alignClass + ' ' + borderClass
+      }
+    >
+      <div className="text-[14px] leading-[1.6] text-stone-700 whitespace-pre-line">
         {text ? (
           <SmartText text={text} lang={lang} />
         ) : (
           <span className="text-stone-300">（未入力）</span>
         )}
       </div>
-      <div className={`text-stone-300 text-base ${dir === 'left' ? 'text-left' : 'text-right'}`}>
+      <div className="text-stone-300 text-base">
         {dir === 'left' ? '←' : '→'}
       </div>
     </div>
