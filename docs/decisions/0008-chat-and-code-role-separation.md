@@ -90,3 +90,35 @@ Code は「これでいい」を「次へ」と読む。判断の根拠を促す
 - Phase 2 完了時の作業ログ（チャット版セッション、2026-05-08）
 - `CLAUDE.md` §13.1 Claude Code との作業ルール
 - `PHASE2-HANDOFF.md`（Phase 2 引き継ぎ資料、Phase 2.1 のスコープ定義を含む）
+
+---
+
+## 運用上の注意点
+
+### interpretations.ts 編集時の _axis パラメータ
+
+`src/features/history/lib/interpretations.ts` の `analyzeAxisChange` 関数は、
+第1引数 `axis` を関数本体で使用していない。TypeScript の `noUnusedParameters`
+設定により、引数名が `axis` のままだと typecheck で `TS6133` エラーが発生する。
+
+**対策**: 第1引数は必ず `_axis`（アンダースコアプレフィックス）で保持すること。
+
+チャット版から渡される `interpretations.ts` のバージョン（v2, v3 など）は
+`axis` のまま記述されていることがある。手動配置時は `_axis` にリネームしてから
+typecheck を実行する。
+
+```typescript
+// NG
+export function analyzeAxisChange(
+  axis: Axis,
+  previousScore: number,
+  currentScore: number,
+)
+
+// OK
+export function analyzeAxisChange(
+  _axis: Axis,
+  previousScore: number,
+  currentScore: number,
+)
+```
