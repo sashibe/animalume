@@ -11,10 +11,13 @@ function AppLayout() {
   const location = useLocation();
   return (
     // app-frame: モバイルはビューポート全体、デスクトップはスマホ枠（globals.css で制御）
+    // app-scroll: border-radius クリップを保ちながら縦スクロールを有効化
     <div className="app-frame">
-      <ScreenTransition routeKey={location.pathname}>
-        <Outlet />
-      </ScreenTransition>
+      <div className="app-scroll">
+        <ScreenTransition routeKey={location.pathname}>
+          <Outlet />
+        </ScreenTransition>
+      </div>
     </div>
   );
 }

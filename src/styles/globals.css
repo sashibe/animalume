@@ -93,6 +93,23 @@
   min-height: 100%;
 }
 
+/* スクロールコンテナ（app-frame 直下、ScreenTransition の外側） */
+.app-scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* スクロールバーを非表示（ネイティブアプリ的な見た目） */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.app-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* デスクトップ: チャコール背景 + スマホ枠 */
 @media (min-width: 640px) {
   html {
