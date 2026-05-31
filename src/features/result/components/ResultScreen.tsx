@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
 import { CharacterImage } from '@/components/character/CharacterImage';
 import { getTypeMeta } from '@/data/types';
 import { getConfidenceLevel, findBorderlineAxes } from '@/features/diagnosis/logic';
 import { AXES } from '@/features/diagnosis/logic/types';
 import type { DiagnosisResult, Axis } from '@/features/diagnosis/logic/types';
 import type { QuestionLocale } from '@/data/questions/types';
-import { cn } from '@/lib/cn';
+import {
+  FogReveal,
+  HeadingReveal,
+  BodyReveal,
+  AccordionFx,
+  MotionButton,
+} from '@/components/motion';
 
 const AXIS_SIDE_LABELS: Record<Axis, [string, string]> = {
   EI: ['E', 'I'],
@@ -27,40 +31,6 @@ function getAxisStrengthKey(axis: Axis, score: number, strength: number): string
   return `result.details.axis_${axis}_mild_${side}`;
 }
 
-function AccordionItem({ title, children }: { title: string; children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="border-b border-border last:border-b-0">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-4 text-left text-sm font-medium text-ink hover:opacity-70 transition-opacity"
-      >
-        {title}
-        <ChevronDown
-          className={cn(
-            'w-4 h-4 text-ink-mute transition-transform duration-200',
-            isOpen && 'rotate-180',
-          )}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="pb-4">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export function ResultScreen() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -68,18 +38,15 @@ export function ResultScreen() {
   const { state } = useLocation();
   const result = state?.result as DiagnosisResult | undefined;
   const locale = (i18n.language.startsWith('ko') ? 'ko' : 'ja') as QuestionLocale;
+  const [revealKey] = useState(0);
 
   if (!result) {
     return (
       <div className="min-h-full flex flex-col items-center justify-center gap-4 p-8">
         <p className="text-ink-soft text-center">{t('common.error')}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="px-6 py-2.5 rounded-xl bg-ink text-bg text-sm font-medium"
-        >
+        <MotionButton variant="primary" onClick={() => navigate('/')}>
           {t('common.back')}
-        </button>
+        </MotionButton>
       </div>
     );
   }
@@ -91,35 +58,75 @@ export function ResultScreen() {
 
   return (
     <main className="min-h-full safe-top safe-bottom flex flex-col">
-      <div className="container-app flex-1 flex flex-col py-8 gap-6 animate-slide-up">
+      <div className="container-app flex-1 flex flex-col py-8 gap-6">
         {/* Header */}
         <div className="text-center space-y-1">
           <p className="text-xs text-ink-mute uppercase tracking-widest">
             {t('result.your_type')}
           </p>
-          <h1 className="font-serif text-h1 text-ink">{result.type}</h1>
-          <p className="text-ink-soft font-serif text-lg">{meta.nameJa}</p>
-          <p className="text-xs text-ink-mute">{meta.groupJa}</p>
+          <h1 className="font-serif text-h1 text-ink" style={{ letterSpacing: '0.18em' }}>
+            <HeadingReveal variant="tracking" triggerKey={revealKey}>
+              {result.type}
+            </HeadingReveal>
+          </h1>
+          <p className="text-ink-soft font-serif text-lg">
+            <HeadingReveal variant="tracking" triggerKey={revealKey} style={{ animationDelay: '80ms' }}>
+              {meta.nameJa}
+            </HeadingReveal>
+          </p>
+          <p className="text-xs text-ink-mute">
+            <HeadingReveal variant="tracking" triggerKey={revealKey} style={{ animationDelay: '160ms' }}>
+              {meta.groupJa}
+            </HeadingReveal>
+          </p>
         </div>
 
-        {/* Character */}
-        <CharacterImage
-          type={result.type}
-          confidence={result.confidence}
-          locale={locale}
-          className="w-full max-w-[280px] mx-auto"
-        />
+        {/* Character — fog ritual reveal with beam */}
+        <div className="flex justify-center" style={{ position: 'relative' }}>
+          <FogReveal triggerKey={revealKey}>
+            <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden' }}>
+              <CharacterImage
+                type={result.type}
+                confidence={result.confidence}
+                locale={locale}
+                className="w-full max-w-[280px] mx-auto"
+              />
+              {/* 09 B — Light beam scan */}
+              <div
+                key={`beam-${revealKey}`}
+                className="am-beam"
+                aria-hidden
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(115deg, transparent 35%, rgba(255,253,247,.65) 50%, transparent 65%)',
+                  pointerEvents: 'none',
+                  animationDelay: '800ms',
+                }}
+              />
+            </div>
+          </FogReveal>
+        </div>
 
         {/* Type description */}
         <div className="bg-bg-subtle rounded-2xl p-5 space-y-2">
-          <p className="font-serif text-ink leading-relaxed">{meta.tagline}</p>
-          <p className="text-sm text-ink-soft leading-relaxed">{meta.essence}</p>
+          <p className="font-serif text-ink leading-relaxed">
+            <BodyReveal variant="clause" triggerKey={revealKey} speed={1.8} showCaret={false}>
+              {meta.tagline}
+            </BodyReveal>
+          </p>
+          <p className="text-sm text-ink-soft leading-relaxed">
+            <BodyReveal variant="clause" triggerKey={revealKey} speed={1.8} showCaret={false}>
+              {meta.essence}
+            </BodyReveal>
+          </p>
         </div>
 
         {/* Confidence-based main message */}
         <div className="space-y-3">
           <p className="text-sm text-ink leading-relaxed">
-            {t(`result.message_${level}`, { typeName: meta.nameJa, tagline: meta.tagline })}
+            <BodyReveal variant="clause" triggerKey={revealKey} speed={1.8} showCaret={false}>
+              {t(`result.message_${level}`, { typeName: meta.nameJa, tagline: meta.tagline })}
+            </BodyReveal>
           </p>
           {primaryBorderlineAxis && (
             <p className="text-sm text-ink-soft leading-relaxed">
@@ -130,7 +137,7 @@ export function ResultScreen() {
 
         {/* Details accordion */}
         <div className="rounded-2xl border border-border overflow-hidden">
-          <AccordionItem title={t('result.details.axes_title')}>
+          <AccordionFx title={t('result.details.axes_title')}>
             <div className="space-y-3 px-1">
               {AXES.map((axis) => {
                 const score = result.scores[axis];
@@ -148,9 +155,9 @@ export function ResultScreen() {
                 );
               })}
             </div>
-          </AccordionItem>
+          </AccordionFx>
 
-          <AccordionItem title={t('result.details.strengths_title')}>
+          <AccordionFx title={t('result.details.strengths_title')}>
             <ul className="space-y-2 px-1">
               {meta.strengths.map((item, i) => (
                 <li key={i} className="flex gap-2 text-sm text-ink-soft leading-relaxed">
@@ -159,11 +166,11 @@ export function ResultScreen() {
                 </li>
               ))}
             </ul>
-          </AccordionItem>
+          </AccordionFx>
 
-          <AccordionItem title={t('result.details.relationship_title')}>
+          <AccordionFx title={t('result.details.relationship_title')}>
             <p className="text-sm text-ink-soft leading-relaxed px-1">{meta.relationshipNote}</p>
-          </AccordionItem>
+          </AccordionFx>
         </div>
 
         {/* Actions */}
@@ -171,17 +178,13 @@ export function ResultScreen() {
           <button
             type="button"
             onClick={() => alert('シェア機能はPhase 2で実装します')}
-            className="w-full py-3.5 rounded-xl border border-border text-ink text-sm font-medium hover:bg-bg-subtle transition"
+            className="w-full py-3.5 rounded-xl border border-border text-ink text-sm font-medium hover:bg-bg-subtle transition am-polaroid"
           >
             {t('result.share')}
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/diagnosis')}
-            className="w-full py-3.5 rounded-xl bg-ink text-bg text-sm font-medium hover:opacity-90 transition"
-          >
+          <MotionButton variant="primary" fullWidth onClick={() => navigate('/diagnosis')}>
             {t('result.retake')}
-          </button>
+          </MotionButton>
         </div>
 
         {resultId && resultId !== 'local' && (
