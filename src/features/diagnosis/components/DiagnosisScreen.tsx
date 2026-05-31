@@ -26,18 +26,20 @@ const PHASE_ACC = [
   'rgba(201,167,106,.35)',
 ];
 
-// WebGL shader variant per phase:
-//   0 → Domain Warp (neutral organic)
-//   3 → Polar Swirl (rose/EI phase)
-//   2 → Ridge FBM  (sage/SN phase)
-//   1 → Turbulence  (gold/JP phase)
-const PHASE_SHADER = [0, 3, 2, 1] as const;
+// 13種のシェーダーからランダムに次を選ぶ（直前と同じにならないよう除外）
+function pickNextVariant(exclude: number): number {
+  const total = 13;
+  const idx = Math.floor(Math.random() * (total - 1));
+  return idx >= exclude ? idx + 1 : idx;
+}
 
 export function DiagnosisScreen() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const initRef = useRef(false);
   const [milestoneKey, setMilestoneKey] = useState<string | null>(null);
+  // 診断開始時にランダムなシェーダーで始まり、10問ごとに切り替わる
+  const [shaderVariant, setShaderVariant] = useState(() => Math.floor(Math.random() * 13));
 
   const questions = useDiagnosisStore((s) => s.questions);
   const currentIndex = useDiagnosisStore((s) => s.currentIndex);
@@ -91,6 +93,8 @@ export function DiagnosisScreen() {
     if (milestoneKey) {
       setMilestoneKey(milestoneKey);
       setTimeout(() => setMilestoneKey(null), 3000);
+      // 10問ごとにシェーダーをランダム切替（前回と重複しない）
+      setShaderVariant((prev) => pickNextVariant(prev));
     }
 
     if (newIndex >= questions.length) {
@@ -133,8 +137,8 @@ export function DiagnosisScreen() {
         }}
       />
 
-      {/* WebGL shader background — changes with phase every 10 questions */}
-      <ShaderBackground variant={PHASE_SHADER[phase]} opacity={0.3} />
+      {/* WebGL shader background — starts random, changes randomly every 10 questions */}
+      <ShaderBackground variant={shaderVariant} opacity={0.3} />
 
       <div className="container-app flex-1 flex flex-col py-8 gap-4" style={{ position: 'relative', zIndex: 1 }}>
         {/* Progress */}
