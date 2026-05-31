@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Compass, Sparkles, Users } from 'lucide-react';
+import { Compass, Sparkles, Users } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { CharacterFrame } from './CharacterFrame';
 import { ShareModal } from '@/features/share/components/ShareModal';
@@ -15,6 +14,13 @@ import type { QuestionLocale } from '@/data/questions/types';
 import { GROUP_OF, GROUP_ACCENT } from '@/lib/group';
 import { cn } from '@/lib/cn';
 import { db } from '@/lib/firebase';
+import {
+  FogReveal,
+  HeadingReveal,
+  BodyReveal,
+  AccordionFx,
+  MotionButton,
+} from '@/components/motion';
 
 const AXIS_SIDE_LABELS: Record<Axis, [string, string]> = {
   EI: ['E', 'I'],
@@ -43,51 +49,6 @@ function SectionEyebrow({ num, label }: { num: number; label: string }) {
   );
 }
 
-function AccordionItem({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-5 text-left hover:opacity-80 transition-opacity"
-      >
-        <span className="flex items-center gap-2.5 text-base font-medium text-ink">
-          {icon && <span className="text-ink-mute">{icon}</span>}
-          {title}
-        </span>
-        <ChevronDown
-          className={cn(
-            'w-4 h-4 text-ink-mute transition-transform duration-300 shrink-0 ml-2',
-            isOpen && 'rotate-180',
-          )}
-          strokeWidth={1.5}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="pb-6">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 export function ResultScreen() {
   const { t, i18n } = useTranslation();
@@ -97,6 +58,7 @@ export function ResultScreen() {
   const stateResult = state?.result as DiagnosisResult | undefined;
   const locale = (i18n.language.startsWith('ko') ? 'ko' : 'ja') as QuestionLocale;
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [revealKey] = useState(0);
 
   // 1. state から即時取得（診断完了後の遷移、最速パス）
   // 2. state がない場合は Firestore から取得（履歴からの遷移など）
@@ -151,13 +113,9 @@ export function ResultScreen() {
     return (
       <div className="min-h-full flex flex-col items-center justify-center gap-4 p-8">
         <p className="text-ink-soft text-center">{t(`result.error.${errorKey}`)}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="px-6 py-2.5 rounded-full bg-ink text-bg text-sm font-medium"
-        >
+        <MotionButton variant="primary" onClick={() => navigate('/')}>
           {t('common.back')}
-        </button>
+        </MotionButton>
       </div>
     );
   }
@@ -202,14 +160,24 @@ export function ResultScreen() {
             className="font-serif text-ink leading-none mb-6 text-5xl sm:text-6xl"
             style={{ letterSpacing: '0.18em' }}
           >
-            {result.type}
+            <HeadingReveal variant="tracking" triggerKey={revealKey}>
+              {result.type}
+            </HeadingReveal>
           </h1>
           <div className="flex items-center justify-center gap-3 mb-2">
             <span aria-hidden className="block h-px w-6 bg-border-strong" />
-            <h2 className="font-serif text-2xl text-ink-soft leading-none">{meta.nameJa}</h2>
+            <h2 className="font-serif text-2xl text-ink-soft leading-none">
+              <HeadingReveal variant="tracking" triggerKey={revealKey} style={{ animationDelay: '80ms' }}>
+                {meta.nameJa}
+              </HeadingReveal>
+            </h2>
             <span aria-hidden className="block h-px w-6 bg-border-strong" />
           </div>
-          <p className="text-sm text-ink-mute">{meta.groupJa}</p>
+          <p className="text-sm text-ink-mute">
+            <HeadingReveal variant="tracking" triggerKey={revealKey} style={{ animationDelay: '160ms' }}>
+              {meta.groupJa}
+            </HeadingReveal>
+          </p>
         </header>
 
         {/* ── Portrait label ── */}
@@ -222,17 +190,41 @@ export function ResultScreen() {
         </div>
 
         {/* ── Character ── */}
-        <CharacterFrame type={result.type} confidence={result.confidence} locale={locale} />
+        <FogReveal triggerKey={revealKey}>
+          <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden' }}>
+            <CharacterFrame type={result.type} confidence={result.confidence} locale={locale} />
+            {/* 09 B — Light beam scan */}
+            <div
+              key={`beam-${revealKey}`}
+              className="am-beam"
+              aria-hidden
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(115deg, transparent 35%, rgba(255,253,247,.65) 50%, transparent 65%)',
+                pointerEvents: 'none',
+                animationDelay: '800ms',
+              }}
+            />
+          </div>
+        </FogReveal>
 
         {/* ── Tagline block ── */}
         <section className="text-center px-2 my-10 space-y-5">
-          <p className="font-serif text-xl leading-snug text-ink text-balance whitespace-pre-line">{meta.tagline}</p>
+          <p className="font-serif text-xl leading-snug text-ink text-balance whitespace-pre-line">
+            <BodyReveal variant="clause" triggerKey={revealKey} speed={1.8} showCaret={false}>
+              {meta.tagline}
+            </BodyReveal>
+          </p>
           <div aria-hidden className="flex items-center justify-center gap-1.5">
             <span className="block h-px w-12 bg-border-strong" />
             <span className="block h-1 w-1 rounded-full bg-accent-gold/70" />
             <span className="block h-px w-12 bg-border-strong" />
           </div>
-          <p className="text-base leading-relaxed text-ink-soft text-balance whitespace-pre-line">{meta.essence}</p>
+          <p className="text-base leading-relaxed text-ink-soft text-balance whitespace-pre-line">
+            <BodyReveal variant="clause" triggerKey={revealKey} speed={1.8} showCaret={false}>
+              {meta.essence}
+            </BodyReveal>
+          </p>
         </section>
 
         {/* ── Page break ── */}
@@ -263,7 +255,7 @@ export function ResultScreen() {
         <section className="mb-12">
           <SectionEyebrow num={2} label={t('result.section_more', 'More')} />
           <div className="border-y border-border divide-y divide-border">
-            <AccordionItem
+            <AccordionFx
               title={t('result.details.axes_title')}
               icon={<Compass className="w-4 h-4" strokeWidth={1.5} />}
             >
@@ -284,9 +276,9 @@ export function ResultScreen() {
                   );
                 })}
               </div>
-            </AccordionItem>
+            </AccordionFx>
 
-            <AccordionItem
+            <AccordionFx
               title={t('result.details.strengths_title')}
               icon={<Sparkles className="w-4 h-4" strokeWidth={1.5} />}
             >
@@ -298,16 +290,16 @@ export function ResultScreen() {
                   </li>
                 ))}
               </ul>
-            </AccordionItem>
+            </AccordionFx>
 
-            <AccordionItem
+            <AccordionFx
               title={t('result.details.relationship_title')}
               icon={<Users className="w-4 h-4" strokeWidth={1.5} />}
             >
               <p className="text-base text-ink-soft leading-[1.85] text-balance px-1 whitespace-pre-line">
                 {meta.relationshipNote}
               </p>
-            </AccordionItem>
+            </AccordionFx>
           </div>
         </section>
 
@@ -320,13 +312,9 @@ export function ResultScreen() {
           >
             {t('result.share')}
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/diagnosis')}
-            className="w-full py-3.5 rounded-full bg-ink text-bg text-sm font-medium hover:opacity-90 transition"
-          >
+          <MotionButton variant="primary" fullWidth onClick={() => navigate('/diagnosis')}>
             {t('result.retake')}
-          </button>
+          </MotionButton>
           <Link
             to="/history"
             className="w-full py-3.5 rounded-full border border-border text-ink text-sm font-medium text-center hover:bg-bg-subtle transition"

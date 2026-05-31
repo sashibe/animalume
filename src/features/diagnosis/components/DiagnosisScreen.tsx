@@ -3,19 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
-import { cn } from '@/lib/cn';
 import { useDiagnosisStore } from '../store';
 import { sampleQuestions } from '@/data/questions';
 import { buildDiagnosisResult } from '../logic';
 import { saveResult } from '../lib/saveResult';
 import { QuestionCard } from './QuestionCard';
+import { AmbientField, AmbientGlyph } from '@/components/motion';
 import type { Answer } from '../logic/types';
+import type { Axis } from '../logic/types';
 
 const MILESTONES: Record<number, 'milestone_10' | 'milestone_20' | 'milestone_30'> = {
   10: 'milestone_10',
   20: 'milestone_20',
   30: 'milestone_30',
 };
+
+const PHASE_BG = ['var(--bg)', 'var(--bg-rose)', 'var(--bg-sage)', 'var(--bg-gold)'];
+const PHASE_ACC = [
+  'rgba(156,152,143,.2)',
+  'rgba(217,165,160,.35)',
+  'rgba(168,181,160,.35)',
+  'rgba(201,167,106,.35)',
+];
 
 export function DiagnosisScreen() {
   const { t, i18n } = useTranslation();
@@ -47,7 +56,10 @@ export function DiagnosisScreen() {
       </div>
     );
   }
+
   const progress = currentIndex / questions.length;
+  const phase = Math.min(Math.floor(currentIndex / 10), 3);
+  const currentAxis = currentQuestion.axis as Axis;
 
   function handleAnswer(selectedOption: 'A' | 'B', responseTimeMs: number) {
     const weight =
@@ -94,12 +106,30 @@ export function DiagnosisScreen() {
     }
   }
 
-  const phaseBackgrounds = ['bg-bg', 'bg-bg-rose', 'bg-bg-sage', 'bg-bg-gold'];
-  const progressPhase = Math.min(Math.floor(currentIndex / 10), phaseBackgrounds.length - 1);
-
   return (
-    <main className={cn('min-h-full safe-top safe-bottom flex flex-col transition-colors duration-1000', phaseBackgrounds[progressPhase])}>
-      <div className="container-app flex-1 flex flex-col py-8 gap-4">
+    <main
+      className="min-h-full safe-top safe-bottom flex flex-col"
+      style={{
+        position: 'relative',
+        backgroundColor: PHASE_BG[phase],
+        transition: 'background-color 1000ms var(--am-ease)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* phase pulse */}
+      <div
+        key={`phase-${phase}`}
+        className="am-phase-pulse"
+        style={{
+          background: `radial-gradient(circle, ${PHASE_ACC[phase]} 0%, transparent 70%)`,
+          inset: '-20%',
+        }}
+      />
+
+      {/* ambient drifting field */}
+      <AmbientField axis={currentAxis} />
+
+      <div className="container-app flex-1 flex flex-col py-8 gap-4" style={{ position: 'relative', zIndex: 1 }}>
         {/* Progress */}
         <div className="space-y-2">
           <div className="h-[3px] bg-bg-muted rounded-full overflow-hidden">
@@ -118,8 +148,29 @@ export function DiagnosisScreen() {
             </span>
             <span>{Math.round(progress * 100)}%</span>
           </div>
+          <div className="h-1 bg-bg-muted rounded-full overflow-hidden">
+            <div
+              className="am-prog-glow h-full rounded-full"
+              style={{
+                width: `${progress * 100}%`,
+                background: 'linear-gradient(90deg, var(--accent-rose), var(--accent-gold))',
+                transition: 'width 500ms var(--am-ease)',
+              }}
+            />
+          </div>
 
-          {/* Back button */}
+          {/* phase dots */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} style={{
+                width: 6, height: 6, borderRadius: 9999,
+                background: phase >= i ? 'var(--accent-gold)' : 'var(--border)',
+                transition: 'background 600ms var(--am-ease)',
+                display: 'block',
+              }} />
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={goBack}
@@ -147,8 +198,9 @@ export function DiagnosisScreen() {
           )}
         </AnimatePresence>
 
-        {/* Question card */}
-        <div className="flex-1 flex items-center py-2">
+        {/* Question area with ambient glyphs */}
+        <div className="flex-1 flex flex-col justify-center gap-1 py-2">
+          <AmbientGlyph axis={currentAxis} position="top" />
           <AnimatePresence mode="wait">
             <QuestionCard
               key={currentQuestion.id}
@@ -158,7 +210,12 @@ export function DiagnosisScreen() {
               index={currentIndex + 1}
             />
           </AnimatePresence>
+          <AmbientGlyph axis={currentAxis} position="bottom" />
         </div>
+
+        <p className="text-center text-xs text-ink-mute" style={{ position: 'relative', zIndex: 1 }}>
+          A / B どちらかを選んでください
+        </p>
       </div>
     </main>
   );

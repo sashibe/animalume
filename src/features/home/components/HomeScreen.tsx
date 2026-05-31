@@ -5,6 +5,7 @@ import { ensureAnonymousAuth } from '@/lib/firebase';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useDiagnosisStore } from '@/features/diagnosis/store';
 import { useHasHistory } from '@/features/history/hooks/useHistory';
+import { MotionButton, HeadingReveal } from '@/components/motion';
 
 export function HomeScreen() {
   const { t } = useTranslation();
@@ -30,9 +31,13 @@ export function HomeScreen() {
           <LanguageSwitcher />
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center text-center gap-8 animate-slide-up">
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
           <div className="space-y-3">
-            <h1 className="text-display font-serif">Animalume</h1>
+            <h1 className="text-display font-serif">
+              <HeadingReveal variant="tracking" style={{ letterSpacing: '0.04em' }}>
+                Animalume
+              </HeadingReveal>
+            </h1>
             <p className="text-ink-soft">{t('app.tagline')}</p>
           </div>
 
@@ -40,13 +45,9 @@ export function HomeScreen() {
             {t('home.intro')}
           </p>
 
-          <button
-            type="button"
-            onClick={handleStart}
-            className="px-8 py-3.5 rounded-xl bg-ink text-bg font-medium transition hover:opacity-90 active:scale-[0.98]"
-          >
+          <MotionButton variant="primary" onClick={handleStart}>
             {t('home.cta_start')}
-          </button>
+          </MotionButton>
 
           {hasHistory && (
             <Link

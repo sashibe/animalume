@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, MousePointerClick, Sparkle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { SmartText } from '@/components/SmartText';
+import { OptionFlash } from '@/components/motion';
 import type { Question } from '@/data/questions/types';
 import type { Axis } from '@/features/diagnosis/logic/types';
 
@@ -61,6 +62,14 @@ function AxisMark({ axis }: { axis: Axis }) {
     ),
   }[axis];
   return <span className={cn('opacity-25', color)}>{shape}</span>;
+}
+
+type OptionAccent = 'rose' | 'sage' | 'mist' | 'gold';
+function axisAccent(axis: Axis): OptionAccent {
+  if (axis === 'EI') return 'rose';
+  if (axis === 'SN') return 'sage';
+  if (axis === 'TF') return 'mist';
+  return 'gold';
 }
 
 type Props = {
@@ -208,48 +217,52 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion, index }: Pro
             {/* Options: A (left / swipe left) | B (right / swipe right) */}
             <div className="grid grid-cols-2 gap-3">
               {/* Option A */}
-              <button
-                type="button"
-                onClick={() => animateAndAnswer('A')}
-                className={cn(
-                  'relative flex flex-col w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
-                  'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
-                  'active:scale-[0.98]',
-                  flashOption === 'A' && 'bg-accent-rose/15 border-accent-rose/40',
-                )}
-              >
-                {/* Drag-highlight overlay — rose border fades in as card moves left */}
-                <motion.div
-                  className="absolute inset-0 rounded-xl border border-accent-rose pointer-events-none"
-                  style={{ opacity: aHighlight }}
-                />
-                <span className="leading-relaxed flex-1 text-left">
-                  <SmartText text={question.optionA.text} lang={question.locale} />
-                </span>
-                <ArrowLeft className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
-              </button>
+              <OptionFlash accent={axisAccent(question.axis)}>
+                <button
+                  type="button"
+                  onClick={() => animateAndAnswer('A')}
+                  className={cn(
+                    'relative flex flex-col w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
+                    'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
+                    'active:scale-[0.98]',
+                    flashOption === 'A' && 'bg-accent-rose/15 border-accent-rose/40',
+                  )}
+                >
+                  {/* Drag-highlight overlay — rose border fades in as card moves left */}
+                  <motion.div
+                    className="absolute inset-0 rounded-xl border border-accent-rose pointer-events-none"
+                    style={{ opacity: aHighlight }}
+                  />
+                  <span className="leading-relaxed flex-1 text-left">
+                    <SmartText text={question.optionA.text} lang={question.locale} />
+                  </span>
+                  <ArrowLeft className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
+                </button>
+              </OptionFlash>
 
               {/* Option B */}
-              <button
-                type="button"
-                onClick={() => animateAndAnswer('B')}
-                className={cn(
-                  'relative flex flex-col items-end w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
-                  'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
-                  'active:scale-[0.98]',
-                  flashOption === 'B' && 'bg-accent-sage/15 border-accent-sage/40',
-                )}
-              >
-                {/* Drag-highlight overlay — sage border fades in as card moves right */}
-                <motion.div
-                  className="absolute inset-0 rounded-xl border border-accent-sage pointer-events-none"
-                  style={{ opacity: bHighlight }}
-                />
-                <span className="leading-relaxed flex-1 text-right">
-                  <SmartText text={question.optionB.text} lang={question.locale} />
-                </span>
-                <ArrowRight className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
-              </button>
+              <OptionFlash accent={axisAccent(question.axis)}>
+                <button
+                  type="button"
+                  onClick={() => animateAndAnswer('B')}
+                  className={cn(
+                    'relative flex flex-col items-end w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
+                    'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
+                    'active:scale-[0.98]',
+                    flashOption === 'B' && 'bg-accent-sage/15 border-accent-sage/40',
+                  )}
+                >
+                  {/* Drag-highlight overlay — sage border fades in as card moves right */}
+                  <motion.div
+                    className="absolute inset-0 rounded-xl border border-accent-sage pointer-events-none"
+                    style={{ opacity: bHighlight }}
+                  />
+                  <span className="leading-relaxed flex-1 text-right">
+                    <SmartText text={question.optionB.text} lang={question.locale} />
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
+                </button>
+              </OptionFlash>
             </div>
           </div>
         </motion.div>

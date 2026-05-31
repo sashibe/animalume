@@ -1,0 +1,462 @@
+/* ============================================================================
+ * Motion & Reactions — shared keyframes + utility classes
+ * すべて prefers-reduced-motion を尊重 (.am-rm-off body 経由でも切れる)
+ * ============================================================================ */
+
+/* ----- Easing references (mirror tokens) ----- */
+:root {
+  --am-ease: cubic-bezier(.22,1,.36,1);
+  --am-ease-io: cubic-bezier(.4,0,.2,1);
+}
+
+/* =====================================================
+ *  1. Character reveal — 霧が晴れる
+ * ===================================================== */
+
+/* 1A subtle: blur(6) → 0, opacity 0 → 1 */
+@keyframes am-fog-subtle {
+  from { opacity: 0; filter: blur(6px); transform: scale(.985); }
+  to   { opacity: 1; filter: blur(0);    transform: scale(1); }
+}
+.am-fog-subtle { animation: am-fog-subtle 900ms var(--am-ease) both; }
+
+/* 1B mist sweep: mask sweeps left→right + soft brighten */
+@keyframes am-fog-mask {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0;
+         opacity: 0; filter: blur(8px); }
+  to   { -webkit-mask-position: 0    0; mask-position: 0    0;
+         opacity: 1; filter: blur(0); }
+}
+.am-fog-mask {
+  -webkit-mask-image: linear-gradient(115deg, #000 36%, transparent 64%);
+          mask-image: linear-gradient(115deg, #000 36%, transparent 64%);
+  -webkit-mask-size: 280% 100%; mask-size: 280% 100%;
+  animation: am-fog-mask 1400ms var(--am-ease) both;
+}
+
+/* 1C ritual: blur → clear + ornament + small particle drift */
+@keyframes am-fog-ritual {
+  0%   { opacity: 0; filter: blur(10px) saturate(.6); transform: scale(.94); }
+  40%  { opacity: .85; filter: blur(4px) saturate(.85); transform: scale(.985); }
+  100% { opacity: 1;  filter: blur(0)    saturate(1);    transform: scale(1); }
+}
+.am-fog-ritual { animation: am-fog-ritual 1600ms var(--am-ease) both; }
+
+/* veil that lifts off the portrait */
+@keyframes am-veil-lift {
+  from { opacity: .55; transform: translateY(0); }
+  to   { opacity: 0;   transform: translateY(-30%); }
+}
+.am-veil { animation: am-veil-lift 1400ms var(--am-ease) both; }
+
+/* particles drift upward */
+@keyframes am-particle-drift {
+  0%   { opacity: 0; transform: translate(var(--px,0px), 16px); }
+  20%  { opacity: var(--po,.8); }
+  100% { opacity: 0; transform: translate(var(--px,0px), -34px); }
+}
+.am-particle {
+  position: absolute; width: 4px; height: 4px; border-radius: 9999px;
+  animation: am-particle-drift var(--pd, 1800ms) var(--am-ease) var(--pdl,0ms) both infinite;
+}
+
+/* ornament hairlines that draw in */
+@keyframes am-hair-in {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: .8; }
+}
+.am-hair { transform-origin: center; animation: am-hair-in 900ms var(--am-ease) 350ms both; }
+@keyframes am-dot-in {
+  from { opacity: 0; transform: scale(.4); }
+  to   { opacity: .8; transform: scale(1); }
+}
+.am-dot-in { animation: am-dot-in 600ms var(--am-ease) 800ms both; }
+
+/* =====================================================
+ *  2. Buttons — press / ripple / glow
+ * ===================================================== */
+
+/* Ink bloom = inner radial that grows out of press point */
+@keyframes am-ink-bloom {
+  from { transform: translate(-50%,-50%) scale(0); opacity: .35; }
+  to   { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+}
+.am-ink-bloom {
+  position: absolute; pointer-events: none;
+  width: 220px; height: 220px; border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,255,255,.45) 0%, rgba(255,255,255,0) 60%);
+  animation: am-ink-bloom 700ms var(--am-ease) both;
+}
+
+/* Watercolor ripple — outside the button, accent-rose */
+@keyframes am-ripple {
+  from { transform: translate(-50%,-50%) scale(.4); opacity: .55; }
+  to   { transform: translate(-50%,-50%) scale(2.6); opacity: 0; }
+}
+.am-ripple {
+  position: absolute; pointer-events: none;
+  width: 140px; height: 140px; border-radius: 9999px;
+  filter: blur(8px);
+  animation: am-ripple 900ms var(--am-ease) both;
+}
+
+/* Particle dots — three small dots fly outward briefly */
+@keyframes am-pdot {
+  0%   { transform: translate(0,0) scale(.6); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(var(--tx,0px),var(--ty,-24px)) scale(1); opacity: 0; }
+}
+.am-pdot {
+  position: absolute; pointer-events: none;
+  width: 4px; height: 4px; border-radius: 9999px;
+  animation: am-pdot 800ms var(--am-ease) both;
+}
+
+/* =====================================================
+ *  3. QuestionCard option flash
+ * ===================================================== */
+
+@keyframes am-opt-flash {
+  0%   { background: transparent; }
+  20%  { background: var(--flash-color, rgba(217,165,160,.22)); }
+  100% { background: transparent; }
+}
+.am-opt-flash { animation: am-opt-flash 700ms var(--am-ease) both; }
+
+/* axis-mark bloom in card corner */
+@keyframes am-axis-bloom {
+  0%   { transform: scale(1);   opacity: .25; }
+  30%  { transform: scale(1.6); opacity: .55; }
+  100% { transform: scale(1);   opacity: .25; }
+}
+.am-axis-bloom { animation: am-axis-bloom 900ms var(--am-ease) both; }
+
+/* =====================================================
+ *  4. Screen transitions
+ * ===================================================== */
+
+@keyframes am-fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes am-fade-up-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-6px); } }
+.am-trans-fade-in  { animation: am-fade-up 500ms var(--am-ease) both; }
+.am-trans-fade-out { animation: am-fade-up-out 320ms var(--am-ease) both; }
+
+@keyframes am-fog-in { from { opacity: 0; filter: blur(10px); transform: scale(1.01); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+@keyframes am-fog-out { from { opacity: 1; filter: blur(0); } to { opacity: 0; filter: blur(8px); transform: scale(.99); } }
+.am-trans-fog-in  { animation: am-fog-in 700ms var(--am-ease) both; }
+.am-trans-fog-out { animation: am-fog-out 420ms var(--am-ease) both; }
+
+@keyframes am-page-in  { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes am-page-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-22px); } }
+.am-trans-page-in  { animation: am-page-in  520ms var(--am-ease) both; }
+.am-trans-page-out { animation: am-page-out 360ms var(--am-ease) both; }
+
+/* Ornament wipe — overlay handled by component, content uses simple fade */
+.am-trans-orn-in  { animation: am-fade-up 600ms var(--am-ease) 320ms both; }
+.am-trans-orn-out { animation: am-fade-up-out 240ms var(--am-ease) both; }
+
+/* Sweeping ornament line for the wipe */
+@keyframes am-orn-sweep {
+  0%   { transform: translateX(-110%) scaleX(.6); opacity: 0; }
+  35%  { opacity: 1; }
+  60%  { transform: translateX(0%)    scaleX(1);  opacity: 1; }
+  100% { transform: translateX(110%)  scaleX(.6); opacity: 0; }
+}
+.am-orn-sweep { animation: am-orn-sweep 820ms var(--am-ease) both; }
+
+/* =====================================================
+ *  5. Progress bar — fill + phase wash
+ * ===================================================== */
+
+@keyframes am-prog-glow {
+  0%,100% { opacity: .5; }
+  50%     { opacity: 1; }
+}
+.am-prog-glow { animation: am-prog-glow 1800ms var(--am-ease-io) infinite; }
+
+@keyframes am-phase-pulse {
+  0%   { opacity: 0; transform: scale(.6); }
+  35%  { opacity: .25; }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+.am-phase-pulse {
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; filter: blur(28px);
+  animation: am-phase-pulse 1400ms var(--am-ease) both;
+}
+
+/* =====================================================
+ *  6. Accordion — chevron + ink bloom from chevron
+ * ===================================================== */
+
+@keyframes am-chev-bloom {
+  from { transform: scale(.4); opacity: .25; }
+  to   { transform: scale(2.4); opacity: 0; }
+}
+.am-chev-bloom {
+  position: absolute; pointer-events: none;
+  width: 28px; height: 28px; border-radius: 9999px;
+  background: radial-gradient(circle, var(--accent-rose) 0%, transparent 70%);
+  animation: am-chev-bloom 700ms var(--am-ease) both;
+}
+
+/* =====================================================
+ *  7. Loading — slow ornament rotation + breathing blob
+ * ===================================================== */
+
+@keyframes am-spin-slow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.am-spin-slow { animation: am-spin-slow 6s linear infinite; }
+
+@keyframes am-breath {
+  0%,100% { transform: scale(1); opacity: .55; }
+  50%     { transform: scale(1.08); opacity: .85; }
+}
+.am-breath { animation: am-breath 2400ms var(--am-ease-io) infinite; }
+
+/* ornament glyph fade through 3 phases */
+@keyframes am-load-glyph {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: 1; }
+}
+.am-load-glyph { animation: am-load-glyph 1600ms var(--am-ease-io) infinite; }
+
+/* =====================================================
+ *  8. Share card — develop / unveil
+ * ===================================================== */
+
+@keyframes am-polaroid {
+  0%   { opacity: 0; filter: blur(6px) saturate(.4) brightness(1.1); transform: scale(.98); }
+  60%  { opacity: 1; filter: blur(2px) saturate(.8) brightness(1.04); }
+  100% { opacity: 1; filter: blur(0)   saturate(1)  brightness(1);    transform: scale(1); }
+}
+.am-polaroid { animation: am-polaroid 1700ms var(--am-ease) both; }
+
+/* =====================================================
+ *  9. 別案 — Aurora, light beam, petals
+ * ===================================================== */
+
+@keyframes am-aurora {
+  0%   { transform: translate(-10%,-6%) rotate(0deg);   opacity: .35; }
+  50%  { transform: translate(8%,4%)    rotate(8deg);    opacity: .55; }
+  100% { transform: translate(-10%,-6%) rotate(0deg);   opacity: .35; }
+}
+.am-aurora { animation: am-aurora 14s var(--am-ease-io) infinite; }
+
+@keyframes am-beam {
+  0%   { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
+  20%  { opacity: .7; }
+  80%  { opacity: .7; }
+  100% { transform: translateX(120%) skewX(-20deg); opacity: 0; }
+}
+.am-beam { animation: am-beam 2200ms var(--am-ease) both; }
+
+@keyframes am-petal-float {
+  0%   { transform: translate(0,0) rotate(0); opacity: 0; }
+  10%  { opacity: var(--po,.7); }
+  50%  { transform: translate(calc(var(--tx,40px) * .55), calc(var(--ty,260px) * .5)) rotate(calc(var(--tr,180deg) * .5)); }
+  90%  { opacity: var(--po,.7); }
+  100% { transform: translate(var(--tx,40px), var(--ty,260px)) rotate(var(--tr,180deg)); opacity: 0; }
+}
+.am-petal {
+  position: absolute; width: 10px; height: 13px; border-radius: 60% 40% 60% 40% / 50%;
+  background: var(--accent-rose);
+  opacity: .7;
+  box-shadow: 0 2px 6px -2px rgba(42,39,36,.10);
+  animation: am-petal-float var(--pd,7s) var(--am-ease-io) var(--pdl,0ms) both infinite;
+  will-change: transform, opacity;
+}
+
+/* =====================================================
+ * 9b. Ambient field — 設問画面で流れる抽象的なグラフィック
+ *     ぶっきらぼうな余白を埋める "気" のレイヤー
+ * ===================================================== */
+
+/* slow drifting blobs (watercolor) */
+@keyframes am-drift-a {
+  0%, 100% { transform: translate(0,0)       scale(1);   }
+  50%      { transform: translate(22px,-14px) scale(1.06); }
+}
+@keyframes am-drift-b {
+  0%, 100% { transform: translate(0,0)       scale(1);    }
+  50%      { transform: translate(-20px,16px) scale(.94); }
+}
+@keyframes am-drift-c {
+  0%, 100% { transform: translate(0,0);                  }
+  33%      { transform: translate(10px,-14px);            }
+  66%      { transform: translate(-12px,12px);            }
+}
+.am-blob-drift-a { animation: am-drift-a 22s var(--am-ease-io) infinite; }
+.am-blob-drift-b { animation: am-drift-b 26s var(--am-ease-io) infinite; }
+.am-blob-drift-c { animation: am-drift-c 18s var(--am-ease-io) infinite; }
+
+/* small motes drifting up — 香炉の煙 */
+@keyframes am-mote-rise {
+  0%   { transform: translate(0,0)      scale(.7); opacity: 0; }
+  15%  { opacity: var(--mo,.55); }
+  85%  { opacity: var(--mo,.55); }
+  100% { transform: translate(var(--mx,0px),var(--my,-160px)) scale(1.15); opacity: 0; }
+}
+.am-mote {
+  position: absolute; border-radius: 9999px;
+  filter: blur(.5px);
+  animation: am-mote-rise var(--md,9s) var(--am-ease-io) var(--mdl,0s) infinite both;
+}
+
+/* sumi-e brush stroke that draws in / fades out on loop */
+@keyframes am-stroke-loop {
+  0%   { stroke-dashoffset: var(--sl,220); opacity: 0; }
+  18%  { opacity: var(--so,.55); }
+  55%  { stroke-dashoffset: 0;             opacity: var(--so,.55); }
+  85%  { opacity: 0; }
+  100% { stroke-dashoffset: 0;             opacity: 0; }
+}
+.am-stroke-loop {
+  stroke-dasharray: var(--sl,220);
+  animation: am-stroke-loop var(--sd,7s) var(--am-ease-io) var(--sdl,0s) infinite both;
+}
+
+/* gentle breathing ring — applied via SMIL inline; class kept for transform fallback */
+@keyframes am-ring-breath {
+  0%, 100% { transform: scale(1);   opacity: .6; }
+  50%      { transform: scale(2.6); opacity: 0;  }
+}
+.am-ring-breath {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: am-ring-breath 4s var(--am-ease-io) infinite both;
+}
+
+/* =====================================================
+ * 10. Text reveal — 見出し系（霧が晴れる）
+ *    すべて 1.0s 以下に収める（遅すぎ＝苛立ちの原因）
+ * ===================================================== */
+
+/* 10A. fog — 見出し全体を blur(8)→0 で晴らす */
+@keyframes am-head-fog {
+  from { opacity: 0; filter: blur(8px); transform: translateY(4px); }
+  to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+}
+.am-head-fog { animation: am-head-fog 700ms var(--am-ease) both; display: inline-block; }
+
+/* 10B. mist wipe — 斜めマスクが左へ流れて文字が現れる */
+@keyframes am-head-mist {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; opacity: 0; filter: blur(3px); }
+  to   { -webkit-mask-position: 0%   0; mask-position: 0%   0; opacity: 1; filter: blur(0); }
+}
+.am-head-mist {
+  display: inline-block;
+  -webkit-mask-image: linear-gradient(95deg, #000 38%, transparent 78%);
+          mask-image: linear-gradient(95deg, #000 38%, transparent 78%);
+  -webkit-mask-size: 260% 100%;
+          mask-size: 260% 100%;
+  animation: am-head-mist 900ms var(--am-ease) both;
+}
+
+/* 10C. tracking settle — letter-spacing が広→既定値に収まる */
+@keyframes am-head-tracking {
+  from { opacity: 0; letter-spacing: 0.32em; filter: blur(2px); }
+  to   { opacity: 1; letter-spacing: inherit; filter: blur(0); }
+}
+.am-head-tracking { animation: am-head-tracking 800ms var(--am-ease) both; display: inline-block; }
+
+/* 10D. per-character fog — JS stagger と組合せて使用 */
+@keyframes am-char-fog {
+  from { opacity: 0; filter: blur(6px); transform: translateY(3px); }
+  to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+}
+.am-char-fog { display: inline-block; animation: am-char-fog 480ms var(--am-ease) both; }
+
+/* 10E. per-word rise — JS で <span> 化＋stagger */
+@keyframes am-word-rise {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+.am-word-rise { display: inline-block; animation: am-word-rise 420ms var(--am-ease) both; }
+
+/* =====================================================
+ * 11. Text reveal — 本文系（タイプライター）
+ *    32ms/char 基本。スピード変更可能
+ * ===================================================== */
+
+/* 11A. typewriter caret — 細い縦線、点滅 */
+@keyframes am-caret-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.am-caret {
+  display: inline-block;
+  width: 1px; height: 1em;
+  margin: 0 1px -2px 2px;
+  background: var(--accent-rose);
+  vertical-align: -2px;
+  animation: am-caret-blink 900ms steps(2) infinite;
+}
+
+/* 11B. word-by-word soft — 句ごとに blur clear */
+@keyframes am-word-soft {
+  from { opacity: 0; filter: blur(2px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+.am-word-soft { display: inline-block; animation: am-word-soft 360ms var(--am-ease) both; }
+
+/* 11C. line rise — 行ごとに 6px ↑ */
+@keyframes am-line-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.am-line-rise { animation: am-line-rise 520ms var(--am-ease) both; }
+
+/* 11D. bleed — 段落丸ごと soft fade（最速・最も控えめ） */
+@keyframes am-bleed {
+  from { opacity: 0; filter: blur(2px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+.am-bleed { animation: am-bleed 480ms var(--am-ease) both; }
+
+/* =====================================================
+ *  Reduced motion
+ * ===================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+body.am-rm-off *, body.am-rm-off *::before, body.am-rm-off *::after {
+  animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important;
+}
+
+/* ----- Generic helpers ----- */
+.am-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.am-replay {
+  appearance: none; border: 1px solid var(--border); background: var(--bg);
+  color: var(--ink-mute); font-family: var(--font-sans); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: 6px 10px; border-radius: 9999px; cursor: pointer;
+  transition: opacity .2s, color .2s, border-color .2s;
+}
+.am-replay:hover { color: var(--ink); border-color: var(--border-strong); }
+
+/* small swatch chip */
+.am-chip {
+  font: 500 10px/1 var(--font-sans);
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.am-spec {
+  font: 11px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ink-mute);
+}
+
+.am-name {
+  font: 500 14px/1.3 var(--font-serif);
+  color: var(--ink);
+}
+
+.am-divider {
+  height: 1px; background: var(--border); width: 100%;
+}
