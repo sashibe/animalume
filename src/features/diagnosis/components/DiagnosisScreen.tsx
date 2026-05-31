@@ -105,12 +105,11 @@ export function DiagnosisScreen() {
     <main
       className="min-h-full safe-top safe-bottom flex flex-col"
       style={{
-        position: 'relative',
         backgroundColor: PHASE_BG[phase],
         transition: 'background-color 1000ms var(--am-ease)',
-        overflow: 'hidden',
       }}
     >
+      <div className="container-app flex-1 flex flex-col py-8 gap-4" style={{ position: 'relative', overflow: 'hidden', zIndex: 1 }}>
       {/* phase pulse */}
       <div
         key={`phase-${phase}`}
@@ -121,10 +120,8 @@ export function DiagnosisScreen() {
         }}
       />
 
-      {/* ambient drifting field */}
+      {/* ambient drifting field — positioned inside container-app so blobs stay within the 448px content column */}
       <AmbientField axis={currentAxis} />
-
-      <div className="container-app flex-1 flex flex-col py-8 gap-4" style={{ position: 'relative', zIndex: 1 }}>
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-ink-mute">
