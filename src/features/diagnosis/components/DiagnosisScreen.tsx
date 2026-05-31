@@ -8,7 +8,7 @@ import { sampleQuestions } from '@/data/questions';
 import { buildDiagnosisResult } from '../logic';
 import { saveResult } from '../lib/saveResult';
 import { QuestionCard } from './QuestionCard';
-import { AmbientField, AmbientGlyph } from '@/components/motion';
+import { ShaderBackground, AmbientGlyph } from '@/components/motion';
 import type { Answer } from '../logic/types';
 import type { Axis } from '../logic/types';
 
@@ -25,6 +25,13 @@ const PHASE_ACC = [
   'rgba(168,181,160,.35)',
   'rgba(201,167,106,.35)',
 ];
+
+// WebGL shader variant per phase:
+//   0 → Domain Warp (neutral organic)
+//   3 → Polar Swirl (rose/EI phase)
+//   2 → Ridge FBM  (sage/SN phase)
+//   1 → Turbulence  (gold/JP phase)
+const PHASE_SHADER = [0, 3, 2, 1] as const;
 
 export function DiagnosisScreen() {
   const { t, i18n } = useTranslation();
@@ -126,8 +133,8 @@ export function DiagnosisScreen() {
         }}
       />
 
-      {/* ambient drifting field */}
-      <AmbientField axis={currentAxis} />
+      {/* WebGL shader background — changes with phase every 10 questions */}
+      <ShaderBackground variant={PHASE_SHADER[phase]} opacity={0.3} />
 
       <div className="container-app flex-1 flex flex-col py-8 gap-4" style={{ position: 'relative', zIndex: 1 }}>
         {/* Progress */}

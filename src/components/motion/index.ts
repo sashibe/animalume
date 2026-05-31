@@ -9,5 +9,6 @@ export { AmLoader } from './AmLoader';
 export { HeadingReveal } from './HeadingReveal';
 export { BodyReveal } from './BodyReveal';
 export { AmbientField } from './AmbientField';
+export { ShaderBackground } from './ShaderBackground';
 export { AmbientGlyph } from './AmbientGlyph';
 export { AmbientPetals } from './AmbientPetals';
