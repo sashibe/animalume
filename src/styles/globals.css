@@ -80,3 +80,55 @@
     color: inherit;
   }
 }
+
+/* ─── Phone mockup (640px以上のデスクトップ) ─────────────────── */
+
+/* モバイル: フレームはビューポート全体を埋める */
+.app-frame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  min-height: 100%;
+}
+
+/* デスクトップ: チャコール背景 + スマホ枠 */
+@media (min-width: 640px) {
+  html {
+    height: 100%;
+    background: #1A1816;  /* 外側の背景 = Animalume ink より少し暗め */
+  }
+
+  body {
+    background: #1A1816;
+    height: auto;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  #root {
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app-frame {
+    width: 390px;
+    height: min(812px, calc(100dvh - 48px));
+    min-height: unset;
+    flex: none;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 1.5px rgba(255, 255, 255, 0.08),  /* 極細ハイライト */
+      0 0 0 3px  rgba(0, 0, 0, 0.45),          /* 外縁ベゼル */
+      0 40px 90px rgba(0, 0, 0, 0.60),         /* 落ち影 */
+      0 8px  24px rgba(0, 0, 0, 0.30);         /* 近接影 */
+  }
+}

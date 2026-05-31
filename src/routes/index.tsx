@@ -10,13 +10,17 @@ import { ScreenTransition } from '@/components/motion';
 function AppLayout() {
   const location = useLocation();
   return (
-    <ScreenTransition routeKey={location.pathname}>
-      <Outlet />
-    </ScreenTransition>
+    // app-frame: モバイルはビューポート全体、デスクトップはスマホ枠（globals.css で制御）
+    <div className="app-frame">
+      <ScreenTransition routeKey={location.pathname}>
+        <Outlet />
+      </ScreenTransition>
+    </div>
   );
 }
 
 const router = createBrowserRouter([
+  // ── メインアプリ（スマホ枠内） ──────────────────────────────
   {
     path: '/',
     element: <AppLayout />,
@@ -26,9 +30,10 @@ const router = createBrowserRouter([
       { path: 'result/:resultId', element: <ResultScreen /> },
       { path: 'history', element: <HistoryScreen /> },
       { path: 'compare', element: <CompareScreen /> },
-      { path: 'admin/*', element: <AdminRoutes /> },
     ],
   },
+  // ── 管理画面（スマホ枠なし、フル幅） ────────────────────────
+  { path: 'admin/*', element: <AdminRoutes /> },
 ]);
 
 export function AppRouter() {
