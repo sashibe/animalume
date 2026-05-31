@@ -1,3 +1,9 @@
+# Claude Design / design tool exports (not part of source)
+*.html
+!index.html
+tmp_design_extract/
+docs/*.exe
+
 # Dependencies
 node_modules
 .pnpm-store
