@@ -9,6 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, MousePointerClick } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { OptionFlash } from '@/components/motion';
 import type { Question } from '@/data/questions/types';
 import type { Axis } from '@/features/diagnosis/logic/types';
 
@@ -27,6 +28,14 @@ function axisBorderClass(axis: Axis): string {
   if (axis === 'SN') return 'border-l-accent-sage';
   if (axis === 'TF') return 'border-l-accent-mist';
   return 'border-l-accent-gold';
+}
+
+type OptionAccent = 'rose' | 'sage' | 'mist' | 'gold';
+function axisAccent(axis: Axis): OptionAccent {
+  if (axis === 'EI') return 'rose';
+  if (axis === 'SN') return 'sage';
+  if (axis === 'TF') return 'mist';
+  return 'gold';
 }
 
 type Props = {
@@ -162,34 +171,38 @@ export function QuestionCard({ question, onAnswer, isFirstQuestion }: Props) {
             {/* Options: A (left, swipe left) | B (right, swipe right) */}
             <div className="grid grid-cols-2 gap-3">
               {/* Option A */}
-              <button
-                type="button"
-                onClick={() => animateAndAnswer('A')}
-                className={cn(
-                  'flex flex-col w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
-                  'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
-                  'active:scale-[0.98]',
-                  flashOption === 'A' && 'bg-accent-rose/15 border-accent-rose/40',
-                )}
-              >
-                <span className="leading-relaxed flex-1">{question.optionA.text}</span>
-                <ArrowLeft className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
-              </button>
+              <OptionFlash accent={axisAccent(question.axis)}>
+                <button
+                  type="button"
+                  onClick={() => animateAndAnswer('A')}
+                  className={cn(
+                    'flex flex-col w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
+                    'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
+                    'active:scale-[0.98]',
+                    flashOption === 'A' && 'bg-accent-rose/15 border-accent-rose/40',
+                  )}
+                >
+                  <span className="leading-relaxed flex-1">{question.optionA.text}</span>
+                  <ArrowLeft className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
+                </button>
+              </OptionFlash>
 
               {/* Option B */}
-              <button
-                type="button"
-                onClick={() => animateAndAnswer('B')}
-                className={cn(
-                  'flex flex-col items-end w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
-                  'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
-                  'active:scale-[0.98]',
-                  flashOption === 'B' && 'bg-accent-sage/15 border-accent-sage/40',
-                )}
-              >
-                <span className="text-right leading-relaxed flex-1">{question.optionB.text}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
-              </button>
+              <OptionFlash accent={axisAccent(question.axis)}>
+                <button
+                  type="button"
+                  onClick={() => animateAndAnswer('B')}
+                  className={cn(
+                    'flex flex-col items-end w-full px-3 py-3.5 rounded-xl border text-sm leading-relaxed',
+                    'border-border hover:border-ink-soft hover:bg-bg-subtle transition-all',
+                    'active:scale-[0.98]',
+                    flashOption === 'B' && 'bg-accent-sage/15 border-accent-sage/40',
+                  )}
+                >
+                  <span className="text-right leading-relaxed flex-1">{question.optionB.text}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-ink-mute/50 mt-2" />
+                </button>
+              </OptionFlash>
             </div>
           </div>
         </motion.div>
