@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Volume2, VolumeX } from 'lucide-react';
 import { useDiagnosisStore } from '../store';
 import { sampleQuestions } from '@/data/questions';
 import { buildDiagnosisResult } from '../logic';
 import { saveResult } from '../lib/saveResult';
 import { QuestionCard } from './QuestionCard';
 import { ShaderBackground, AmbientGlyph } from '@/components/motion';
+import { useBgm } from '@/hooks/useBgm';
 import type { Answer } from '../logic/types';
 import type { Axis } from '../logic/types';
 
@@ -40,6 +41,8 @@ export function DiagnosisScreen() {
   const [milestoneKey, setMilestoneKey] = useState<string | null>(null);
   // 診断開始時にランダムなシェーダーで始まり、10問ごとに切り替わる
   const [shaderVariant, setShaderVariant] = useState(() => Math.floor(Math.random() * 13));
+  // BGM（ループ再生）
+  const { muted, toggleMute } = useBgm('/audio/diagnosis.mp3', 0.35);
 
   const questions = useDiagnosisStore((s) => s.questions);
   const currentIndex = useDiagnosisStore((s) => s.currentIndex);
@@ -150,14 +153,28 @@ export function DiagnosisScreen() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             />
           </div>
-          <div className="flex justify-between text-xs text-ink-mute">
+          <div className="flex justify-between items-center text-xs text-ink-mute">
             <span>
               {t('diagnosis.progress', {
                 current: currentIndex + 1,
                 total: questions.length,
               })}
             </span>
-            <span>{Math.round(progress * 100)}%</span>
+            <div className="flex items-center gap-3">
+              <span>{Math.round(progress * 100)}%</span>
+              {/* BGM ミュートボタン */}
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={muted ? 'BGMを再生' : 'BGMをミュート'}
+                className="text-ink-mute/60 hover:text-ink-mute transition-colors"
+              >
+                {muted
+                  ? <VolumeX className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  : <Volume2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                }
+              </button>
+            </div>
           </div>
           <div className="h-1 bg-bg-muted rounded-full overflow-hidden">
             <div
