@@ -169,11 +169,17 @@ export function DiagnosisScreen() {
                 type="button"
                 onClick={toggleMute}
                 aria-label={muted ? 'BGMを再生' : 'BGMをミュート'}
-                className="text-ink-mute/60 hover:text-ink-mute transition-colors"
+                className={`
+                  flex items-center justify-center w-7 h-7 rounded-full
+                  border transition-all active:scale-90
+                  ${muted
+                    ? 'border-ink-mute/40 text-ink-mute bg-transparent'
+                    : 'border-accent-gold/60 text-accent-gold bg-accent-gold/10'}
+                `}
               >
                 {muted
-                  ? <VolumeX className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  : <Volume2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  ? <VolumeX className="w-3.5 h-3.5" strokeWidth={2} />
+                  : <Volume2 className="w-3.5 h-3.5" strokeWidth={2} />
                 }
               </button>
             </div>
