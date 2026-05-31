@@ -41,8 +41,8 @@ export function DiagnosisScreen() {
   const [milestoneKey, setMilestoneKey] = useState<string | null>(null);
   // 診断開始時にランダムなシェーダーで始まり、10問ごとに切り替わる
   const [shaderVariant, setShaderVariant] = useState(() => Math.floor(Math.random() * 13));
-  // BGM（ループ再生）
-  const { muted, toggleMute } = useBgm('/audio/diagnosis.mp3', 0.35);
+  // BGM（ループ再生）— ensurePlaying は handleAnswer 内で呼ぶ（ユーザージェスチャー内を保証）
+  const { muted, toggleMute, ensurePlaying } = useBgm('/audio/diagnosis.mp3');
 
   const questions = useDiagnosisStore((s) => s.questions);
   const currentIndex = useDiagnosisStore((s) => s.currentIndex);
@@ -74,6 +74,8 @@ export function DiagnosisScreen() {
   const currentAxis = currentQuestion.axis as Axis;
 
   function handleAnswer(selectedOption: 'A' | 'B', responseTimeMs: number) {
+    // 最初の回答タップで BGM を開始（ユーザージェスチャー内 = ブラウザの再生制限を回避）
+    ensurePlaying();
     const weight =
       selectedOption === 'A'
         ? currentQuestion.optionA.weight
