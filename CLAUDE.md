@@ -806,5 +806,42 @@ Claude Code のセッション記憶は揮発性のため、半年後・1年後�
 
 ---
 
-**Last Updated**: 2026-05-09
-**Version**: 1.2.0（§6 admin ディレクトリ追加 / §7.1 content_published・content_history 追加 / §7.2 管理者権限ルール追加）
+## 16. Orchestration Hub（agent-orchestration-hub 運用）
+
+本プロジェクトは agent-orchestration-hub 体制で運用。バインド真実は Notion「Projects Index」（ルート＝Claude Skills）。毎セッション最初に対象を Animalume に確定してから着手する。
+
+### 16.1 Profile
+full-stack（データ真実層＝Firestore / 実行層＝Firebase Hosting。Supabase ref=none、Vercel=非該当）。
+
+### 16.2 標準ツールの所在
+- GitHub（成果物真実）: sashibe/animalume（リモートHEADが正。push権限=Code専有）
+- Notion 4DB（調整）: フォルダ https://app.notion.com/p/38dc57a3bcd481699592ea571bd28a91
+  - Tasks ds 7369f9f2-acee-48d1-8624-37975de72710
+  - Bugs ds c2172989-8858-46b8-9f63-e0ca3821550c
+  - Decisions ds 9705a910-efd5-4aec-897e-44fc0844a9bd
+  - Log ds cffad4f5-5b3c-46f6-95ac-9ace07548f7f
+- Firebase Firestore（データ真実）: project animalume（id animalume / no 716335638670, Blaze）
+- Firebase Hosting（実行・公開）: canonical animalume.com（www→redirect, ADR-0010）
+- Supabase: none / Vercel: 非該当 / dev_context: 立てない（ADR-0011）
+
+### 16.3 環境（毎回復唱／§1.4）
+prod = Firebase project animalume（id animalume / no 716335638670, Blaze）… Code が firebase CLI/MCP で操作
+staging = none（単一構成・2026-06-28 Code確認済）
+※Web は prod に書かない。
+
+### 16.4 レーン規律
+- 編集・migration・commit・push は Code。Web は読み取り＋検証＋ADR起草。
+- §3 一次ソース：GitHubリモートHEAD/Actions（Web可）、Firestore/Auth/Hosting（Code＝公式Firebase MCP/firebase CLI、要所はChrome=コンソール）。Webに Firebase コネクタは無い（公式Firebase MCPは stdio/ローカル＝Code/Desktop向け）。
+- 鍵・トークンはチャット禁止。ダッシュボード作業は Chrome 委譲。
+- _axis 規約: analyzeAxisChange 第1引数は _axis（noUnusedParameters）。Chat出力は axis で来るため typecheck/build 前に手修正。
+
+### 16.5 ADR
+索引＝Notion「Animalume Decisions (ADR Index)」/ 本体＝docs/decisions/。
+現行: ADR-0008（役割分離）, ADR-0010（単一canonicalドメイン）, ADR-0011（orchestration-hub採用）。
+
+---
+
+**Last Updated**: 2026-06-28
+**Version**: 1.3.0（§16 Orchestration Hub 追加 — agent-orchestration-hub 後適用 / ADR-0011）
+
+> 注: Web 提供のハブ節は見出しを `## 14.` としていたが、既存 §14/§15 と衝突するため Code が `## 16.`（サブ節 16.1–16.5）に採番修正。本文内容は逐語。
