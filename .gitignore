@@ -3,6 +3,8 @@
 !index.html
 tmp_design_extract/
 docs/*.exe
+# Stray media downloads at repo root (in-app BGM lives in public/audio/, which stays tracked)
+/*.mp3
 
 # Dependencies
 node_modules
